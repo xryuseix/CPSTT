@@ -1,6 +1,7 @@
 use clap::Clap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use std::env;
 
 #[derive(Clap, Debug)]
@@ -14,11 +15,11 @@ struct Opts {}
 
 fn main() {
     Opts::parse();
-    print_logo();
+    let path = env::current_exe().unwrap();
+    print_logo(path);
 }
 
-fn print_logo() {
-    let mut path = env::current_exe().unwrap();
+fn print_logo(mut path: PathBuf) {
     for _i in 0..3 {
         path.pop();
     }
