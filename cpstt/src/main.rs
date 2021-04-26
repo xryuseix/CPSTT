@@ -37,3 +37,21 @@ fn print_logo(mut path: PathBuf) -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    /**
+     * ファイル読み込みテスト
+    */
+    fn print_logo_test() {
+        let path = PathBuf::from(r"/Users/ryuse/Desktop/Algorithm Library/cpstt/cpstt/target/debug/cpstt");
+        let result_ok = print_logo(path);
+        assert!(result_ok.is_ok());
+        let path = PathBuf::from(r"/path/to");
+        let result_ok = print_logo(path);
+        assert!(result_ok.is_err());
+    }
+}
