@@ -1,1 +1,0 @@
-# Competitive Programming Stress Test Tools
