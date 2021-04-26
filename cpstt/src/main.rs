@@ -1,9 +1,7 @@
 use clap::Clap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-
 use std::env;
-use std::path::Path;
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -21,14 +19,12 @@ fn main() {
 
 fn print_logo() {
     let mut path = env::current_exe().unwrap();
-    path.pop();
-    path.pop();
-    path.pop();
+    for _i in 0..3 {
+        path.pop();
+    }
     path.push("logo.txt");
     let f = File::open(path).unwrap();
-    let reader = BufReader::new(f);
-    for line in reader.lines() {
-        let line = line.unwrap();
-        println!("{}", line);
+    for line in BufReader::new(f).lines() {
+        println!("{}", line.unwrap());
     }
 }
