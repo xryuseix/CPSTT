@@ -1,3 +1,4 @@
+use ansi_term::Colour::{Red, Yellow};
 use anyhow::{bail, Result};
 use clap::Clap;
 use std::env;
@@ -5,8 +6,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
-use ansi_term::Colour::{Red};
-
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -101,7 +100,16 @@ fn exec_cpp_program(root_path: PathBuf) -> Result<()> {
  */
 fn print_error(msg: String) {
     eprint!("{}: ", Red.bold().paint("Error"));
-    eprintln!("{}",msg);
+    eprintln!("{}", msg);
+}
+
+/**
+ * WARNINGを出力
+ * @param msg WARNING内容
+ */
+fn print_warning(msg: String) {
+    eprint!("{}: ", Yellow.bold().paint("Warning"));
+    eprintln!("{}", msg);
 }
 
 #[cfg(test)]
