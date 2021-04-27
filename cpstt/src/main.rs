@@ -1,10 +1,10 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::Clap;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-// use std::process::Command;
+use std::process::Command;
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -57,29 +57,40 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * @param path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
  */
-fn generator(mut root_path: PathBuf) -> Result<()> {
-    root_path.push("test/generator.cpp");
-    println!("{}", root_path.display());
-    // exec_cpp_program(root_path)?;
+fn generator(mut generator_path: PathBuf) -> Result<()> {
+    generator_path.push("test/generator.cpp");
+    println!("{}", generator_path.display());
+    exec_cpp_program(generator_path)?;
     Ok(())
 }
 
 /*
  * C++のファイルを指定し，そのプログラムを実行する
  */
-// fn exec_cpp_program(_path: PathBuf) -> Result<()> {
-//     let mut output = Command::new("ls")
-//         .args(&["-l", "-a"])
-//         .spawn()
-//         .expect("failed to start `ls`");
-//     let stdout = output.stdout.take().unwrap();
+fn exec_cpp_program(root_path: PathBuf) -> Result<()> {
+    let compile_output = Command::new("g++")
+        .args(&[
+            "-std=c++1z",
+            "-O3",
+            "-fsanitize=undefined",
+            "-I",
+            ".",
+            root_path.to_str().unwrap(),
+        ])
+        .output()
+        .expect("Failed to compile C++ program");
 
-//     let reader = BufReader::new(stdout);
-//     for line in reader.lines() {
-//         println!("{}", line?);
-//     }
-//     Ok(())
-// }
+    let compile_stdout = String::from_utf8_lossy(&compile_output.stdout);
+    let compile_stderr = String::from_utf8_lossy(&compile_output.stderr);
+    println!("output: {}", compile_stderr);
+    if compile_stderr != String::from("") {
+        println!("{}", compile_stderr);
+        bail!("It seems compile error");
+    } else {
+        println!("AAAAAAAAAAAA");
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
