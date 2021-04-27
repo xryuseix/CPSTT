@@ -1,4 +1,3 @@
-use ansi_term::Colour::{Red, Yellow};
 use anyhow::{bail, Result};
 use clap::Clap;
 use std::env;
@@ -6,6 +5,9 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
+
+mod print_error;
+pub use crate::print_error::PrintError;
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -94,7 +96,7 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &str) -> Result<String> {
     let compile_stderr = String::from_utf8_lossy(&compile_output.stderr);
     if compile_stderr != String::from("") {
         println!("{}", compile_stderr);
-        print_error(String::from("It seems compile error"));
+        PrintError::print_error(String::from("It seems compile error"));
         bail!("Some Error is occurred!");
     }
 
@@ -108,29 +110,10 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &str) -> Result<String> {
     let exec_stderr = String::from_utf8_lossy(&exec_output.stderr);
     if exec_stderr != String::from("") {
         println!("{}", exec_stderr);
-        print_error(String::from("It seems execution error"));
+        PrintError::print_error(String::from("It seems execution error"));
         bail!("Some Error is occurred!");
     }
     Ok(exec_stdout.into_owned())
-}
-
-/**
- * エラーを出力
- * @param msg エラー内容
- */
-fn print_error(msg: String) {
-    eprint!("{}: ", Red.bold().paint("Error"));
-    eprintln!("{}", msg);
-}
-
-/**
- * WARNINGを出力
- * @param msg WARNING内容
- */
-#[allow(dead_code)]
-fn print_warning(msg: String) {
-    eprint!("{}: ", Yellow.bold().paint("Warning"));
-    eprintln!("{}", msg);
 }
 
 #[cfg(test)]
