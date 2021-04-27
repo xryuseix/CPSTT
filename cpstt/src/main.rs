@@ -60,7 +60,12 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
     generator_path.push("test/generator.cpp");
-    let exec_output = exec_cpp_program(generator_path)?;
+    let mut generator_root_path = generator_path.clone();
+    generator_root_path.pop();
+    let exec_output = exec_cpp_program(
+        generator_path.clone(),
+        generator_root_path.to_str().unwrap(),
+    )?;
     println!("{}", exec_output);
     Ok(())
 }
@@ -68,10 +73,11 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 /*
  * C++のファイルを指定し，そのプログラムを実行する
  * @param cpp_path C++ファイルへのパス
+ * @param exec_args C++実行形式ファイルのコマンドライン引数
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(cpp_path: PathBuf) -> Result<String> {
+fn exec_cpp_program(cpp_path: PathBuf, exec_args: &str) -> Result<String> {
     /* コンパイル */
     let compile_output = Command::new("g++")
         .args(&[
@@ -94,6 +100,7 @@ fn exec_cpp_program(cpp_path: PathBuf) -> Result<String> {
 
     /* 実行 */
     let exec_output = Command::new("./a.out")
+        .args(&[exec_args])
         .output()
         .expect("Failed to execution C++ program");
 
