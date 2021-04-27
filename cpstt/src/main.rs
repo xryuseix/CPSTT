@@ -17,12 +17,25 @@ struct Opts {}
 
 fn main() -> Result<()> {
     Opts::parse();
-    let path = env::current_exe().unwrap();
+    /* プロジェクトのルートパスを取得 */
+    let root_path = get_root_path();
     /* ロゴを出力 */
-    print_logo(path.clone())?;
+    print_logo(root_path.clone())?;
     /* generatorを実行 */
-    generator(path.clone())?;
+    generator(root_path.clone())?;
     Ok(())
+}
+
+/**
+ * プロジェクトのルートパスを取得
+ * @return プロジェクトのルートパス
+ */
+fn get_root_path() -> PathBuf {
+    let mut exec_path = env::current_exe().unwrap();
+    for _i in 0..3 {
+        exec_path.pop();
+    }
+    exec_path
 }
 
 /**
@@ -30,13 +43,9 @@ fn main() -> Result<()> {
  * @param path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
  */
-fn print_logo(root_path: PathBuf) -> Result<()> {
-    let mut path = root_path;
-    for _i in 0..3 {
-        path.pop();
-    }
-    path.push("logo.txt");
-    let file = File::open(path)?;
+fn print_logo(mut root_path: PathBuf) -> Result<()> {
+    root_path.push("logo.txt");
+    let file = File::open(root_path)?;
     for line in BufReader::new(file).lines() {
         println!("{}", line.unwrap());
     }
@@ -48,10 +57,10 @@ fn print_logo(root_path: PathBuf) -> Result<()> {
  * @param path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
  */
-fn generator(mut path: PathBuf) -> Result<()> {
-    path.push("test/generator.cpp");
-    println!("{}", path.display());
-    // exec_cpp_program(path)?;
+fn generator(mut root_path: PathBuf) -> Result<()> {
+    root_path.push("test/generator.cpp");
+    println!("{}", root_path.display());
+    // exec_cpp_program(root_path)?;
     Ok(())
 }
 
