@@ -59,16 +59,20 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * @return 正常終了の有無
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
-    generator_path.push("test/generator_err.cpp");
-    println!("{}", generator_path.display());
-    exec_cpp_program(generator_path)?;
+    generator_path.push("test/generator.cpp");
+    let exec_output = exec_cpp_program(generator_path)?;
+    println!("{}", exec_output);
     Ok(())
 }
 
 /*
  * C++のファイルを指定し，そのプログラムを実行する
+ * @param cpp_path C++ファイルへのパス
+ * @return 異常終了: エラー
+ *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(root_path: PathBuf) -> Result<()> {
+fn exec_cpp_program(cpp_path: PathBuf) -> Result<String> {
+    /* コンパイル */
     let compile_output = Command::new("g++")
         .args(&[
             "-std=c++1z",
@@ -76,22 +80,31 @@ fn exec_cpp_program(root_path: PathBuf) -> Result<()> {
             "-fsanitize=undefined",
             "-I",
             ".",
-            root_path.to_str().unwrap(),
+            cpp_path.to_str().unwrap(),
         ])
         .output()
         .expect("Failed to compile C++ program");
 
-    let compile_stdout = String::from_utf8_lossy(&compile_output.stdout);
     let compile_stderr = String::from_utf8_lossy(&compile_output.stderr);
-    println!("output: {}", compile_stderr);
     if compile_stderr != String::from("") {
         println!("{}", compile_stderr);
         print_error(String::from("It seems compile error"));
         bail!("Some Error is occurred!");
-    } else {
-        println!("AAAAAAAAAAAA");
     }
-    Ok(())
+
+    /* 実行 */
+    let exec_output = Command::new("./a.out")
+        .output()
+        .expect("Failed to execution C++ program");
+
+    let exec_stdout = String::from_utf8_lossy(&exec_output.stdout);
+    let exec_stderr = String::from_utf8_lossy(&exec_output.stderr);
+    if exec_stderr != String::from("") {
+        println!("{}", exec_stderr);
+        print_error(String::from("It seems execution error"));
+        bail!("Some Error is occurred!");
+    }
+    Ok(exec_stdout.into_owned())
 }
 
 /**
