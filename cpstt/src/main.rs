@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
+use ansi_term::Colour::{Red};
+
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -58,7 +60,7 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * @return 正常終了の有無
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
-    generator_path.push("test/generator.cpp");
+    generator_path.push("test/generator_err.cpp");
     println!("{}", generator_path.display());
     exec_cpp_program(generator_path)?;
     Ok(())
@@ -85,11 +87,21 @@ fn exec_cpp_program(root_path: PathBuf) -> Result<()> {
     println!("output: {}", compile_stderr);
     if compile_stderr != String::from("") {
         println!("{}", compile_stderr);
-        bail!("It seems compile error");
+        print_error(String::from("It seems compile error"));
+        bail!("Some Error is occurred!");
     } else {
         println!("AAAAAAAAAAAA");
     }
     Ok(())
+}
+
+/**
+ * エラーを出力
+ * @param msg エラー内容
+ */
+fn print_error(msg: String) {
+    eprint!("{}: ", Red.bold().paint("Error"));
+    eprintln!("{}",msg);
 }
 
 #[cfg(test)]
