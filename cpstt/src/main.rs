@@ -120,6 +120,7 @@ fn print_error(msg: String) {
  * WARNINGを出力
  * @param msg WARNING内容
  */
+#[allow(dead_code)]
 fn print_warning(msg: String) {
     eprint!("{}: ", Yellow.bold().paint("Warning"));
     eprintln!("{}", msg);
@@ -134,20 +135,24 @@ mod tests {
      * ファイル読み込みテスト
      */
     fn print_logo_test() {
-        let path =
-            PathBuf::from(r"/Users/ryuse/Desktop/Algorithm Library/cpstt/cpstt/target/debug/cpstt");
-        let result_ok = print_logo(path);
+        /* 正常パス */
+        let mut root_path = get_root_path();
+        root_path.pop(); // testでは実行ファイルパスに'/target'が付く
+        let result_ok = print_logo(root_path.clone());
         assert!(result_ok.is_ok());
-        let path = PathBuf::from(r"/path/to");
-        let result_ok = print_logo(path);
+
+        /* 異常パス */
+        let invalid_path = PathBuf::from(r"/path/to");
+        let result_ok = print_logo(invalid_path);
         assert!(result_ok.is_err());
     }
 
-    // #[test]
-    // fn exec_cpp_program_test() {
-    //     let path =
-    //         PathBuf::from(r"/Users/ryuse/Desktop/Algorithm Library/cpstt/cpstt/test/smart.cpp");
-    //     let result_ok = exec_cpp_program(path);
-    //     assert!(result_ok.is_ok());
-    // }
+    #[test]
+    fn exec_generator_test() {
+        let mut generator_path = get_root_path();
+        generator_path.pop();
+        generator_path.push("test/generator.cpp");
+        let exec_output = exec_cpp_program(generator_path).unwrap();
+        assert_eq!(exec_output, String::from(""));
+    }
 }
