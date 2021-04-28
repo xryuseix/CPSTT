@@ -142,7 +142,13 @@ mod tests {
         let mut generator_path = get_root_path();
         generator_path.pop();
         generator_path.push("test/generator.cpp");
-        let exec_output = exec_cpp_program(generator_path).unwrap();
+        let mut generator_root_path = generator_path.clone();
+        generator_root_path.pop();
+        let exec_output = exec_cpp_program(
+            generator_path.clone(),
+            generator_root_path.to_str().unwrap(),
+        )
+        .unwrap();
         assert_eq!(exec_output, String::from(""));
     }
 }
