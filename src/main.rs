@@ -138,7 +138,11 @@ mod tests {
     }
 
     #[test]
+    /**
+     * generatorファイルの実行テスト
+     */
     fn exec_generator_test() {
+        /* 正常ファイル */
         let mut generator_path = get_root_path();
         generator_path.pop();
         generator_path.push("test/generator.cpp");
@@ -150,5 +154,29 @@ mod tests {
         )
         .unwrap();
         assert_eq!(exec_output, String::from(""));
+
+        /* コンパイルエラーファイル */
+        let mut generator_path_com_err = get_root_path();
+        generator_path_com_err.pop();
+        generator_path_com_err.push("test/generator_compile_err.cpp");
+        let mut generator_root_path_com_err = generator_path_com_err.clone();
+        generator_root_path_com_err.pop();
+        let exec_output_com_err = exec_cpp_program(
+            generator_path_com_err.clone(),
+            generator_root_path_com_err.to_str().unwrap(),
+        );
+        assert!(exec_output_com_err.is_err());
+
+        /* ランタイムエラーファイル */
+        let mut generator_path_exec_err = get_root_path();
+        generator_path_exec_err.pop();
+        generator_path_exec_err.push("test/generator_compile_err.cpp");
+        let mut generator_root_path_exec_err = generator_path_exec_err.clone();
+        generator_root_path_exec_err.pop();
+        let exec_output_exec_err = exec_cpp_program(
+            generator_path_exec_err.clone(),
+            generator_root_path_exec_err.to_str().unwrap(),
+        );
+        assert!(exec_output_exec_err.is_err());
     }
 }
