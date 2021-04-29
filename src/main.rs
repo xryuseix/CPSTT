@@ -40,7 +40,18 @@ fn main() -> Result<()> {
     let testcase_path_list = MyFileIO::get_path_list(testcase_dir_path.clone())?;
 
     /* smartなプログラムを実行 */
-    smart(root_path.clone(), &testcase_path_list)?;
+    exec_user_program(
+        root_path.clone(),
+        &testcase_path_list,
+        String::from("smart"),
+    )?;
+
+    /* stupidなプログラムを実行 */
+    exec_user_program(
+        root_path.clone(),
+        &testcase_path_list,
+        String::from("stupid"),
+    )?;
 
     Ok(())
 }
@@ -67,7 +78,7 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
 fn init(root_path: PathBuf) -> Result<()> {
     let mut test_path = root_path.clone();
     test_path.push("test");
-    
+
     let mut testcase_path = test_path.clone();
     testcase_path.push("testcase");
     MyFileIO::file_clean(testcase_path)?;
@@ -102,38 +113,49 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 }
 
 /**
- * smartを実行
+ * smart/stupidを実行
  * @param smart_path 本プログラムへの絶対パス
  * @param testcase_paths テストケースのパス一覧
  * @return 正常終了の有無
  */
-fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
-    smart_path.push("test/smart.cpp");
-    let mut smart_root_path = smart_path.clone();
-    smart_root_path.pop();
+fn exec_user_program(
+    mut program_path: PathBuf,
+    testcase_paths: &Vec<PathBuf>,
+    program_type: String,
+) -> Result<()> {
+    program_path.push(format!("test/{}.cpp", program_type));
+    let mut program_root_path = program_path.clone();
+    program_root_path.pop();
 
     for test_num in 0..testcase_paths.len() {
         let args = vec![
             String::from("<"),
             String::from(testcase_paths[test_num].to_str().unwrap()),
         ];
-        let exec_output = exec_cpp_program(smart_path.clone(), &args, &smart_root_path)?;
+        let exec_output = exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
         println!(
-            "=== smart output ({}/{}) ===",
+            "=== {} output ({}/{}) ===",
+            program_type,
             test_num + 1,
             testcase_paths.len()
         );
-        if exec_output.len() < 50 {
+        let max_len = 200;
+        if exec_output.len() < max_len {
             println!("{}\n", exec_output);
         } else {
+            let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
+                "\x1b[33m\\n\x1b[m",
+                "\n",
+                3,
+            );
             println!(
                 "Output data is too large. (content-size: {})\n",
                 exec_output.len()
             );
-            println!("{}\n......", &exec_output[0..50]);
+            println!("{}\x1b[m\n......\n", &exec_output_format[0..max_len]);
         }
-        let mut output_path = smart_root_path.clone();
-        output_path.push("cpstt_out/smart");
+        let mut output_path = program_root_path.clone();
+        output_path.push(format!("cpstt_out/{}", program_type));
         output_path.push(
             testcase_paths[test_num]
                 .file_name()
