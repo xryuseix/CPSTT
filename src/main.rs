@@ -105,7 +105,8 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
         if exec_output.len() < 50 {
             println!("{}\n", exec_output);
         } else {
-            println!("Output data is too large.\n");
+            println!("Output data is too large. (content-size: {})\n", exec_output.len());
+            println!("{}\n......", &exec_output[0..50]);
         }
         let mut output_path = smart_root_path.clone();
         output_path.push("cpstt_out");
