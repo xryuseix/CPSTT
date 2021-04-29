@@ -1,7 +1,9 @@
+use anyhow::{bail, Result};
 use std::env;
-use std::path::PathBuf;
 use std::fs;
-use anyhow::{Result};
+use std::path::PathBuf;
+
+pub use crate::print_error::PrintError;
 
 pub struct MyFileIO {}
 
@@ -32,5 +34,29 @@ impl MyFileIO {
         }
         file_paths.sort();
         Ok(file_paths.clone())
+    }
+
+    /**
+     * 特定ディレクトリ内のファイルを全て削除
+     * @param dir_path 削除したいディレクトリへの絶対パス
+     * @return 異常終了: エラー
+     *         正常終了: 実行結果の文字列
+     */
+    pub fn file_clean(dir_path: PathBuf) -> Result<(), anyhow::Error> {
+        let paths = MyFileIO::get_path_list(dir_path)?;
+        for path in paths.iter() {
+            let extension = path.extension().unwrap().to_str().unwrap();
+            if extension == "in" || extension == "out" {
+                fs::remove_file(path)?;
+            } else {
+                PrintError::print_error(format!(
+                    "{} could not be deleted because its extension is {}",
+                    path.to_str().unwrap(),
+                    extension
+                ));
+                bail!("Some Error is occurred!");
+            }
+        }
+        Ok(())
     }
 }
