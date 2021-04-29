@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 use std::env;
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::PathBuf;
 
 pub use crate::print_error::PrintError;
@@ -57,6 +58,20 @@ impl MyFileIO {
                 bail!("Some Error is occurred!");
             }
         }
+        Ok(())
+    }
+
+    /**
+     * ファイルの書き込み
+     * @param path 書き込み先
+     * @param content 書き込みたい文字列
+     * @return 異常終了: エラー
+     *         正常終了: 実行結果の文字列
+     */
+    pub fn file_write(path: &PathBuf, content: &String) -> Result<(), anyhow::Error> {
+        let mut file = File::create(path)?;
+        write!(file, "{}", content)?;
+        file.flush()?;
         Ok(())
     }
 }

@@ -1,15 +1,15 @@
 use anyhow::{bail, Result};
 use clap::Clap;
-use std::fs::{File};
+use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-mod print_error;
-pub use crate::print_error::PrintError;
 mod fileio;
+mod print_error;
 pub use crate::fileio::MyFileIO;
+pub use crate::print_error::PrintError;
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -60,12 +60,19 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * generatorを実行
  * @param generator_path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
- * TODO: 実行前にテストケース, 実行結果を全部消す
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
+    // パスの作成
     generator_path.push("test/generator.cpp");
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
+
+    // 生成先のファイルの削除
+    let mut testcase_path = generator_root_path.clone();
+    testcase_path.push("testcase");
+    MyFileIO::file_clean(testcase_path)?;
+
+    // generatorを実行
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
     let exec_output = exec_generator(generator_path.clone(), &args, &generator_root_path)?;
     println!("=== generator output ===");
@@ -100,6 +107,17 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
         } else {
             println!("Output data is too large.\n");
         }
+        let mut output_path = smart_root_path.clone();
+        output_path.push("cpstt_out");
+        output_path.push(
+            testcase_paths[test_num]
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap(),
+        );
+        output_path.set_extension("out");
+        MyFileIO::file_write(&output_path, &exec_output)?;
     }
     Ok(())
 }
@@ -128,7 +146,7 @@ fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
 
     let compile_stderr = String::from_utf8_lossy(&compile_output.stderr);
     if compile_stderr != String::from("") {
-        println!("{}", compile_stderr);
+        eprintln!("{}", compile_stderr);
         PrintError::print_error(String::from("It seems compile error"));
         bail!("Some Error is occurred!");
     }
@@ -157,7 +175,7 @@ fn exec_generator(
     let exec_stdout = String::from_utf8_lossy(&exec_output.stdout);
     let exec_stderr = String::from_utf8_lossy(&exec_output.stderr);
     if exec_stderr != String::from("") {
-        println!("{}", exec_stderr);
+        eprintln!("{}", exec_stderr);
         PrintError::print_error(String::from("It seems execution error"));
         bail!("Some Error is occurred!");
     }
@@ -191,7 +209,7 @@ fn exec_cpp_program(
     let exec_stdout = String::from_utf8_lossy(&exec_cpp.stdout);
     let exec_stderr = String::from_utf8_lossy(&exec_cpp.stderr);
     if exec_stderr != String::from("") {
-        println!("{}", exec_stderr);
+        eprintln!("{}", exec_stderr);
         PrintError::print_error(format!(
             "It seems execution error [{}]",
             cpp_path.to_str().unwrap()
