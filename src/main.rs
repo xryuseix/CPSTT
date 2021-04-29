@@ -95,6 +95,7 @@ fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
     for path in paths.into_iter() {
         file_paths.push(path?.path());
     }
+    file_paths.sort();
     return Ok(file_paths.clone());
 }
 
