@@ -204,7 +204,7 @@ fn exec_cpp_program(
         .args(&[exec_args[1].clone()])
         .stdout(Stdio::piped())
         .spawn()
-        .expect("Failed to execution C++ program");
+        .expect("Failed to load testcase");
     let exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
         .args(exec_args)
         .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
@@ -256,7 +256,8 @@ mod tests {
         let mut generator_root_path = generator_path.clone();
         generator_root_path.pop();
         let args = vec![String::from(generator_root_path.to_str().unwrap())];
-        let exec_output = exec_cpp_program(generator_path.clone(), &args).unwrap();
+        let exec_output =
+            exec_generator(generator_path.clone(), &args, &generator_root_path).unwrap();
         assert_eq!(exec_output, String::from(""));
 
         /* コンパイルエラーファイル */
@@ -266,7 +267,11 @@ mod tests {
         let mut generator_root_path_com_err = generator_path_com_err.clone();
         generator_root_path_com_err.pop();
         let args_com_err = vec![String::from(generator_root_path_com_err.to_str().unwrap())];
-        let exec_output_com_err = exec_cpp_program(generator_path_com_err.clone(), &args_com_err);
+        let exec_output_com_err = exec_generator(
+            generator_path_com_err.clone(),
+            &args_com_err,
+            &generator_root_path_com_err,
+        );
         assert!(exec_output_com_err.is_err());
 
         /* ランタイムエラーファイル */
@@ -276,9 +281,10 @@ mod tests {
         let mut generator_root_path_exec_err = generator_path_exec_err.clone();
         generator_root_path_exec_err.pop();
         let args_exec_err = vec![String::from(generator_root_path_exec_err.to_str().unwrap())];
-        let exec_output_exec_err = exec_cpp_program(
+        let exec_output_exec_err = exec_generator(
             generator_path_exec_err.clone(),
-            &args_exec_err.to_str().unwrap(),
+            &args_exec_err,
+            &generator_root_path_exec_err,
         );
         assert!(exec_output_exec_err.is_err());
     }
