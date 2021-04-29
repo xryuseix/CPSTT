@@ -68,7 +68,7 @@ impl MyFileIO {
      * @return 異常終了: エラー
      *         正常終了: 実行結果の文字列
      */
-    pub fn file_write(path: &PathBuf, content: &String) -> Result<(), anyhow::Error> {
+    pub fn file_write(path: &PathBuf, content: &String) -> Result<()> {
         let mut file = File::create(path)?;
         write!(file, "{}", content)?;
         file.flush()?;

@@ -28,6 +28,9 @@ fn main() -> Result<()> {
     /* ロゴを出力 */
     print_logo(root_path.clone())?;
 
+    /* プログラムの初期化 */
+    init(root_path.clone())?;
+
     /* generatorを実行 */
     generator(root_path.clone())?;
 
@@ -44,7 +47,7 @@ fn main() -> Result<()> {
 
 /**
  * CPSTTのロゴを出力
- * @param path 実行形式ファイルへの絶対パス
+ * @param path 本プログラムへの絶対パス
  * @return 正常終了の有無
  */
 fn print_logo(mut root_path: PathBuf) -> Result<()> {
@@ -57,8 +60,27 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
 }
 
 /**
+ * プログラムの初期化
+ * @param root_path 本プログラムへの絶対パス
+ * @return 正常終了の有無
+ */
+fn init(root_path: PathBuf) -> Result<()> {
+    let mut test_path = root_path.clone();
+    test_path.push("test");
+    
+    let mut testcase_path = test_path.clone();
+    testcase_path.push("testcase");
+    MyFileIO::file_clean(testcase_path)?;
+
+    let mut output_path = test_path.clone();
+    output_path.push("cpstt_out");
+    MyFileIO::file_clean(output_path)?;
+    Ok(())
+}
+
+/**
  * generatorを実行
- * @param generator_path 実行形式ファイルへの絶対パス
+ * @param generator_path 本プログラムへの絶対パス
  * @return 正常終了の有無
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
@@ -66,11 +88,6 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     generator_path.push("test/generator.cpp");
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
-
-    // 生成先のファイルの削除
-    let mut testcase_path = generator_root_path.clone();
-    testcase_path.push("testcase");
-    MyFileIO::file_clean(testcase_path)?;
 
     // generatorを実行
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
@@ -82,7 +99,7 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 
 /**
  * smartを実行
- * @param smart_path 実行形式ファイルへの絶対パス
+ * @param smart_path 本プログラムへの絶対パス
  * @param testcase_paths テストケースのパス一覧
  * @return 正常終了の有無
  */
@@ -105,7 +122,10 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
         if exec_output.len() < 50 {
             println!("{}\n", exec_output);
         } else {
-            println!("Output data is too large. (content-size: {})\n", exec_output.len());
+            println!(
+                "Output data is too large. (content-size: {})\n",
+                exec_output.len()
+            );
             println!("{}\n......", &exec_output[0..50]);
         }
         let mut output_path = smart_root_path.clone();
