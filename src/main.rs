@@ -3,8 +3,9 @@ use clap::Clap;
 use std::env;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
+use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 mod print_error;
 pub use crate::print_error::PrintError;
@@ -35,7 +36,7 @@ fn main() -> Result<()> {
     let testcase_path_list = get_path_list(testcase_dir_path.clone())?;
     println!("{:?}", testcase_path_list);
 
-    // smart(root_path.clone(), &testcase_path_list)?;
+    smart(root_path.clone(), &testcase_path_list)?;
 
     Ok(())
 }
@@ -77,7 +78,7 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
-    let exec_output = exec_cpp_program(generator_path.clone(), &args)?;
+    let exec_output = exec_generator(generator_path.clone(), &args)?;
     println!("{}", exec_output);
     Ok(())
 }
@@ -103,17 +104,17 @@ fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
  * @param testcase_paths テストケースのパス一覧
  * @return 正常終了の有無
  */
-// fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
-//     smart_path.push("test/smart.cpp");
-//     let args = vec![
-//         String::from("<"),
-//         String::from(testcase_paths[0].to_str().unwrap()),
-//     ];
-//     println!("{:?}",args);
-//     let exec_output = exec_cpp_program(smart_path.clone(), &args)?;
-//     println!("RUST: {}", exec_output);
-//     Ok(())
-// }
+fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
+    smart_path.push("test/smart.cpp");
+    let args = vec![
+        String::from("<"),
+        String::from(testcase_paths[0].to_str().unwrap()),
+    ];
+    println!("{:?}", args);
+    let exec_output = exec_cpp_program(smart_path.clone(), &args)?;
+    println!("RUST: {}", exec_output);
+    Ok(())
+}
 
 /**
  * C++のファイルを指定し，そのプログラムをコンパイルする
@@ -151,7 +152,7 @@ fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+fn exec_generator(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
     compile(&cpp_path)?;
     /* 実行 */
     let exec_output = Command::new("./a.out")
@@ -167,6 +168,33 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String
         bail!("Some Error is occurred!");
     }
     Ok(exec_stdout.into_owned())
+}
+
+/**
+ * C++のファイルを指定し，そのプログラムを実行する
+ * @param cpp_path C++ファイルへのパス
+ * @param exec_args C++実行形式ファイルのコマンドライン引数
+ * @return 異常終了: エラー
+ *         正常終了: 実行結果の文字列
+ */
+fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+    compile(&cpp_path)?;
+    /* 実行 */
+    let mut exec_cat = Command::new("cat")
+        .args(&[String::from(
+            "/Users/ryuse/Desktop/Algorithm Library/cpstt/test/testcase/0_sample_00.in",
+        )])
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to execution C++ program");
+    let mut _exec_cpp = Command::new("./a.out")
+        .args(exec_args)
+        .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
+        .spawn()
+        .expect("Failed to execution C++ program");
+    let _status1 = exec_cat.wait().unwrap();
+    let _status2 = _exec_cpp.wait().unwrap();
+    Ok(String::from("AAAAA"))
 }
 
 #[cfg(test)]
