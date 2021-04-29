@@ -72,9 +72,13 @@ fn init(root_path: PathBuf) -> Result<()> {
     testcase_path.push("testcase");
     MyFileIO::file_clean(testcase_path)?;
 
-    let mut output_path = test_path.clone();
-    output_path.push("cpstt_out");
-    MyFileIO::file_clean(output_path)?;
+    let mut output_smart_path = test_path.clone();
+    output_smart_path.push("cpstt_out/smart");
+    MyFileIO::file_clean(output_smart_path)?;
+
+    let mut output_stupid_path = test_path.clone();
+    output_stupid_path.push("cpstt_out/stupid");
+    MyFileIO::file_clean(output_stupid_path)?;
     Ok(())
 }
 
@@ -129,7 +133,7 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
             println!("{}\n......", &exec_output[0..50]);
         }
         let mut output_path = smart_root_path.clone();
-        output_path.push("cpstt_out");
+        output_path.push("cpstt_out/smart");
         output_path.push(
             testcase_paths[test_num]
                 .file_name()
