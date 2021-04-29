@@ -22,19 +22,21 @@ fn main() -> Result<()> {
     Opts::parse();
     /* プロジェクトのルートパスを取得 */
     let root_path = get_root_path();
-    
+
     /* ロゴを出力 */
     print_logo(root_path.clone())?;
-    
+
     /* generatorを実行 */
     generator(root_path.clone())?;
-    
+
     /* generatorで生成したファイルパスの取得 */
     let mut testcase_dir_path = root_path.clone();
     testcase_dir_path.push("test/testcase");
-    let _v = get_path_list(testcase_dir_path.clone())?;
-    println!("{:?}", _v);
-    
+    let testcase_path_list = get_path_list(testcase_dir_path.clone())?;
+    println!("{:?}", testcase_path_list);
+
+    // smart(root_path.clone(), &testcase_path_list);
+
     Ok(())
 }
 
@@ -68,16 +70,14 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * generatorを実行
  * @param generator_path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
- * TODO: 実行前にテストケースを全部消す
+ * TODO: 実行前にテストケース, 実行結果を全部消す
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
     generator_path.push("test/generator.cpp");
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
-    let exec_output = exec_cpp_program(
-        generator_path.clone(),
-        generator_root_path.to_str().unwrap(),
-    )?;
+    let args = vec![String::from(generator_root_path.to_str().unwrap())];
+    let exec_output = exec_cpp_program(generator_path.clone(), &args)?;
     println!("{}", exec_output);
     Ok(())
 }
@@ -98,13 +98,31 @@ fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
 }
 
 /**
+ * smartを実行
+ * @param smart_path 実行形式ファイルへの絶対パス
+ * @param testcase_paths テストケースのパス一覧
+ * @return 正常終了の有無
+ */
+// fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
+//     smart_path.push("test/smart.cpp");
+//     // let mut smart_root_path =smart_path.clone();
+//     // smart_path.pop();
+//     let exec_output = exec_cpp_program(
+//         smart_path.clone(),
+//         testcase_paths[0].to_str().unwrap(),
+//     )?;
+//     println!("{}", exec_output);
+//     Ok(())
+// }
+
+/**
  * C++のファイルを指定し，そのプログラムを実行する
  * @param cpp_path C++ファイルへのパス
  * @param exec_args C++実行形式ファイルのコマンドライン引数
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(cpp_path: PathBuf, exec_args: &str) -> Result<String> {
+fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
     /* コンパイル */
     let compile_output = Command::new("g++")
         .args(&[
@@ -127,7 +145,7 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &str) -> Result<String> {
 
     /* 実行 */
     let exec_output = Command::new("./a.out")
-        .args(&[exec_args])
+        .args(exec_args)
         .output()
         .expect("Failed to execution C++ program");
 
@@ -173,11 +191,8 @@ mod tests {
         generator_path.push("test/generator.cpp");
         let mut generator_root_path = generator_path.clone();
         generator_root_path.pop();
-        let exec_output = exec_cpp_program(
-            generator_path.clone(),
-            generator_root_path.to_str().unwrap(),
-        )
-        .unwrap();
+        let args = vec![String::from(generator_root_path.to_str().unwrap())];
+        let exec_output = exec_cpp_program(generator_path.clone(), &args).unwrap();
         assert_eq!(exec_output, String::from(""));
 
         /* コンパイルエラーファイル */
@@ -186,10 +201,8 @@ mod tests {
         generator_path_com_err.push("test/generator_compile_err.cpp");
         let mut generator_root_path_com_err = generator_path_com_err.clone();
         generator_root_path_com_err.pop();
-        let exec_output_com_err = exec_cpp_program(
-            generator_path_com_err.clone(),
-            generator_root_path_com_err.to_str().unwrap(),
-        );
+        let args_com_err = vec![String::from(generator_root_path_com_err.to_str().unwrap())];
+        let exec_output_com_err = exec_cpp_program(generator_path_com_err.clone(), &args_com_err);
         assert!(exec_output_com_err.is_err());
 
         /* ランタイムエラーファイル */
@@ -198,9 +211,10 @@ mod tests {
         generator_path_exec_err.push("test/generator_compile_err.cpp");
         let mut generator_root_path_exec_err = generator_path_exec_err.clone();
         generator_root_path_exec_err.pop();
+        let args_exec_err = vec![String::from(generator_root_path_exec_err.to_str().unwrap())];
         let exec_output_exec_err = exec_cpp_program(
             generator_path_exec_err.clone(),
-            generator_root_path_exec_err.to_str().unwrap(),
+            &args_exec_err.to_str().unwrap(),
         );
         assert!(exec_output_exec_err.is_err());
     }
