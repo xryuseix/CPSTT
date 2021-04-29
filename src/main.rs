@@ -34,7 +34,6 @@ fn main() -> Result<()> {
     let mut testcase_dir_path = root_path.clone();
     testcase_dir_path.push("test/testcase");
     let testcase_path_list = get_path_list(testcase_dir_path.clone())?;
-    println!("{:?}", testcase_path_list);
 
     smart(root_path.clone(), &testcase_path_list)?;
 
@@ -110,9 +109,7 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
         String::from("<"),
         String::from(testcase_paths[0].to_str().unwrap()),
     ];
-    println!("{:?}", args);
     let exec_output = exec_cpp_program(smart_path.clone(), &args)?;
-    println!("RUST: {}", exec_output);
     Ok(())
 }
 
@@ -180,21 +177,29 @@ fn exec_generator(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> 
 fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
     compile(&cpp_path)?;
     /* 実行 */
-    let mut exec_cat = Command::new("cat")
+    let exec_cat = Command::new("cat")
         .args(&[String::from(
             "/Users/ryuse/Desktop/Algorithm Library/cpstt/test/testcase/0_sample_00.in",
         )])
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to execution C++ program");
-    let mut _exec_cpp = Command::new("./a.out")
+    let exec_cpp = Command::new("./a.out")
         .args(exec_args)
         .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
-        .spawn()
+        .output()
         .expect("Failed to execution C++ program");
-    let _status1 = exec_cat.wait().unwrap();
-    let _status2 = _exec_cpp.wait().unwrap();
-    Ok(String::from("AAAAA"))
+    let exec_stdout = String::from_utf8_lossy(&exec_cpp.stdout);
+    let exec_stderr = String::from_utf8_lossy(&exec_cpp.stderr);
+    if exec_stderr != String::from("") {
+        println!("{}", exec_stderr);
+        PrintError::print_error(format!(
+            "It seems execution error [{}]",
+            cpp_path.to_str().unwrap()
+        ));
+        bail!("Some Error is occurred!");
+    }
+    Ok(exec_stdout.into_owned())
 }
 
 #[cfg(test)]
