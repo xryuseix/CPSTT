@@ -109,14 +109,15 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
     let mut smart_root_path = smart_path.clone();
     smart_root_path.pop();
 
-    let mut test_num = 0;
-    for test in testcase_paths.iter() {
-        test_num += 1;
-        let args = vec![String::from("<"), String::from(test.to_str().unwrap())];
+    for test_num in 0..testcase_paths.len() {
+        let args = vec![
+            String::from("<"),
+            String::from(testcase_paths[test_num].to_str().unwrap()),
+        ];
         let exec_output = exec_cpp_program(smart_path.clone(), &args, &smart_root_path)?;
         println!(
             "=== smart output ({}/{}) ===",
-            test_num,
+            test_num + 1,
             testcase_paths.len()
         );
         println!("{}\n", exec_output);
@@ -199,9 +200,7 @@ fn exec_cpp_program(
 ) -> Result<String> {
     compile(&cpp_path)?;
     let exec_cat = Command::new("cat")
-        .args(&[String::from(
-            "/Users/ryuse/Desktop/Algorithm Library/cpstt/test/testcase/0_sample_00.in",
-        )])
+        .args(&[exec_args[1].clone()])
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to execution C++ program");

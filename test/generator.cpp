@@ -31,5 +31,8 @@ void output(int a, int b, const string &prefix, const int num) {
 
 int main(int argc, char *argv[]) {
     init(argc, argv);
-    output(0, 1, "0_sample", 0);
+    output(0, 0, "0_sample", 0);
+    output(0, 1, "0_sample", 1);
+    output(1, 0, "0_sample", 2);
+    output(1, 1, "0_sample", 3);
 }
