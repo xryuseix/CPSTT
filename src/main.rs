@@ -77,8 +77,9 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
-    let exec_output = exec_generator(generator_path.clone(), &args)?;
-    println!("{}", exec_output);
+    let exec_output = exec_generator(generator_path.clone(), &args, &generator_root_path)?;
+    println!("=== generator output ===");
+    println!("{}\n", exec_output);
     Ok(())
 }
 
@@ -105,11 +106,21 @@ fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
  */
 fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
     smart_path.push("test/smart.cpp");
-    let args = vec![
-        String::from("<"),
-        String::from(testcase_paths[0].to_str().unwrap()),
-    ];
-    let exec_output = exec_cpp_program(smart_path.clone(), &args)?;
+    let mut smart_root_path = smart_path.clone();
+    smart_root_path.pop();
+
+    let mut test_num = 0;
+    for test in testcase_paths.iter() {
+        test_num += 1;
+        let args = vec![String::from("<"), String::from(test.to_str().unwrap())];
+        let exec_output = exec_cpp_program(smart_path.clone(), &args, &smart_root_path)?;
+        println!(
+            "=== smart output ({}/{}) ===",
+            test_num,
+            testcase_paths.len()
+        );
+        println!("{}\n", exec_output);
+    }
     Ok(())
 }
 
@@ -120,7 +131,8 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
  *         正常終了: 実行結果の文字列
  */
 fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
-    /* コンパイル */
+    let mut dir_root_path = cpp_path.clone();
+    dir_root_path.pop();
     let compile_output = Command::new("g++")
         .args(&[
             "-std=c++1z",
@@ -130,6 +142,7 @@ fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
             ".",
             cpp_path.to_str().unwrap(),
         ])
+        .current_dir(dir_root_path.to_str().unwrap())
         .output()
         .expect("Failed to compile C++ program");
 
@@ -146,13 +159,17 @@ fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
  * C++のファイルを指定し，そのプログラムを実行する
  * @param cpp_path C++ファイルへのパス
  * @param exec_args C++実行形式ファイルのコマンドライン引数
+ * @param root_path C++ファイルがあるディレクトリへのパス
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_generator(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+fn exec_generator(
+    cpp_path: PathBuf,
+    exec_args: &Vec<String>,
+    root_path: &PathBuf,
+) -> Result<String> {
     compile(&cpp_path)?;
-    /* 実行 */
-    let exec_output = Command::new("./a.out")
+    let exec_output = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
         .args(exec_args)
         .output()
         .expect("Failed to execution C++ program");
@@ -171,12 +188,16 @@ fn exec_generator(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> 
  * C++のファイルを指定し，そのプログラムを実行する
  * @param cpp_path C++ファイルへのパス
  * @param exec_args C++実行形式ファイルのコマンドライン引数
+ * @param root_path C++ファイルがあるディレクトリへのパス
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+fn exec_cpp_program(
+    cpp_path: PathBuf,
+    exec_args: &Vec<String>,
+    root_path: &PathBuf,
+) -> Result<String> {
     compile(&cpp_path)?;
-    /* 実行 */
     let exec_cat = Command::new("cat")
         .args(&[String::from(
             "/Users/ryuse/Desktop/Algorithm Library/cpstt/test/testcase/0_sample_00.in",
@@ -184,7 +205,7 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to execution C++ program");
-    let exec_cpp = Command::new("./a.out")
+    let exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
         .args(exec_args)
         .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
         .output()
