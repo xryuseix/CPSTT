@@ -92,10 +92,6 @@ fn init(root_path: PathBuf) -> Result<()> {
     output_stupid_path.push("cpstt_out/stupid");
     MyFileIO::file_clean(output_stupid_path)?;
 
-    /* 設定ファイルの読み込み */
-    // let mut settings_path = root_path.clone();
-    // settings_path.push("settings.toml");
-    // MyFileIO::read_settings(settings_path.clone())?;
     Ok(())
 }
 
@@ -105,12 +101,12 @@ fn init(root_path: PathBuf) -> Result<()> {
  * @return 正常終了の有無
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
-    // パスの作成
+    /* パスの作成 */
     generator_path.push("test/generator.cpp");
     let mut generator_root_path = generator_path.clone();
     generator_root_path.pop();
 
-    // generatorを実行
+    /* generatorを実行 */
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
     let exec_output = exec_generator(generator_path.clone(), &args, &generator_root_path)?;
     println!("=== generator output ===");
