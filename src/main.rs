@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     let testcase_path_list = get_path_list(testcase_dir_path.clone())?;
     println!("{:?}", testcase_path_list);
 
-    // smart(root_path.clone(), &testcase_path_list);
+    // smart(root_path.clone(), &testcase_path_list)?;
 
     Ok(())
 }
@@ -105,24 +105,23 @@ fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
  */
 // fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
 //     smart_path.push("test/smart.cpp");
-//     // let mut smart_root_path =smart_path.clone();
-//     // smart_path.pop();
-//     let exec_output = exec_cpp_program(
-//         smart_path.clone(),
-//         testcase_paths[0].to_str().unwrap(),
-//     )?;
-//     println!("{}", exec_output);
+//     let args = vec![
+//         String::from("<"),
+//         String::from(testcase_paths[0].to_str().unwrap()),
+//     ];
+//     println!("{:?}",args);
+//     let exec_output = exec_cpp_program(smart_path.clone(), &args)?;
+//     println!("RUST: {}", exec_output);
 //     Ok(())
 // }
 
 /**
- * C++のファイルを指定し，そのプログラムを実行する
+ * C++のファイルを指定し，そのプログラムをコンパイルする
  * @param cpp_path C++ファイルへのパス
- * @param exec_args C++実行形式ファイルのコマンドライン引数
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
     /* コンパイル */
     let compile_output = Command::new("g++")
         .args(&[
@@ -142,7 +141,18 @@ fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String
         PrintError::print_error(String::from("It seems compile error"));
         bail!("Some Error is occurred!");
     }
+    Ok(())
+}
 
+/**
+ * C++のファイルを指定し，そのプログラムを実行する
+ * @param cpp_path C++ファイルへのパス
+ * @param exec_args C++実行形式ファイルのコマンドライン引数
+ * @return 異常終了: エラー
+ *         正常終了: 実行結果の文字列
+ */
+fn exec_cpp_program(cpp_path: PathBuf, exec_args: &Vec<String>) -> Result<String> {
+    compile(&cpp_path)?;
     /* 実行 */
     let exec_output = Command::new("./a.out")
         .args(exec_args)
