@@ -8,7 +8,7 @@ use std::process::{Command, Stdio};
 
 mod fileio;
 mod print_error;
-pub use crate::fileio::MyFileIO;
+pub use crate::fileio::{MyFileIO, SETTING};
 pub use crate::print_error::PrintError;
 
 #[derive(Clap, Debug)]
@@ -76,6 +76,7 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
  * @return 正常終了の有無
  */
 fn init(root_path: PathBuf) -> Result<()> {
+    /* 不要なファイルを削除 */
     let mut test_path = root_path.clone();
     test_path.push("test");
 
@@ -90,6 +91,11 @@ fn init(root_path: PathBuf) -> Result<()> {
     let mut output_stupid_path = test_path.clone();
     output_stupid_path.push("cpstt_out/stupid");
     MyFileIO::file_clean(output_stupid_path)?;
+
+    /* 設定ファイルの読み込み */
+    // let mut settings_path = root_path.clone();
+    // settings_path.push("settings.toml");
+    // MyFileIO::read_settings(settings_path.clone())?;
     Ok(())
 }
 
@@ -114,7 +120,7 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 
 /**
  * smart/stupidを実行
- * @param smart_path 本プログラムへの絶対パス
+ * @param program_path 本プログラムへの絶対パス
  * @param testcase_paths テストケースのパス一覧
  * @return 正常終了の有無
  */
@@ -139,10 +145,12 @@ fn exec_user_program(
             test_num + 1,
             testcase_paths.len()
         );
-        let max_len = 200;
+        let max_len = SETTING.execution.max_output_len as usize;
         if exec_output.len() < max_len {
+            /* 実行結果の文字列が短い場合 */
             println!("{}\n", exec_output);
         } else {
+            /* 実行結果の文字列が長い場合 */
             let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
                 "\x1b[33m\\n\x1b[m",
                 "\n",
@@ -152,8 +160,11 @@ fn exec_user_program(
                 "Output data is too large. (content-size: {})\n",
                 exec_output.len()
             );
-            println!("{}\x1b[m\n......\n", &exec_output_format[0..max_len]);
+            let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
+            let sliced_output = &exec_output_format[0..end];
+            println!("{}\x1b[m\n......\n", &sliced_output);
         }
+        /* 実行結果をファイル書き込み */
         let mut output_path = program_root_path.clone();
         output_path.push(format!("cpstt_out/{}", program_type));
         output_path.push(
@@ -164,7 +175,7 @@ fn exec_user_program(
                 .unwrap(),
         );
         output_path.set_extension("out");
-        MyFileIO::file_write(&output_path, &exec_output)?;
+        MyFileIO::write_file(&output_path, &exec_output)?;
     }
     Ok(())
 }
