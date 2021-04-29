@@ -18,6 +18,7 @@ pub struct SettingsClass {
 #[derive(Debug, Deserialize)]
 pub struct ExecutionSettings {
     pub max_output_len: i32,
+    pub max_output_line: i32,
 }
 
 lazy_static! {

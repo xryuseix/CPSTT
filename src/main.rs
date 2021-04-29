@@ -150,7 +150,7 @@ fn exec_user_program(
             let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
                 "\x1b[33m\\n\x1b[m",
                 "\n",
-                3,
+                (SETTING.execution.max_output_line - 1) as usize,
             );
             println!(
                 "Output data is too large. (content-size: {})\n",
