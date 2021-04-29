@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use clap::Clap;
 use std::env;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
@@ -26,6 +26,8 @@ fn main() -> Result<()> {
     print_logo(root_path.clone())?;
     /* generatorを実行 */
     generator(root_path.clone())?;
+    /* generatorで生成したファイルパスの取得 */
+    let _v = get_testcase_paths(root_path);
     Ok(())
 }
 
@@ -57,8 +59,9 @@ fn print_logo(mut root_path: PathBuf) -> Result<()> {
 
 /**
  * generatorを実行
- * @param path 実行形式ファイルへの絶対パス
+ * @param generator_path 実行形式ファイルへの絶対パス
  * @return 正常終了の有無
+ * TODO: 実行前にテストケースを全部消す
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
     generator_path.push("test/generator.cpp");
@@ -72,7 +75,24 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     Ok(())
 }
 
-/*
+/**
+ * generatorで生成したファイルパスの取得
+ * @param testcase_path 実行形式ファイルへの絶対パス
+ * @return 異常終了: エラー
+ *         正常終了: テストケースへのパスが入った配列
+ */
+fn get_testcase_paths(mut testcase_dir_path: PathBuf) -> Result<Vec<PathBuf>> {
+    testcase_dir_path.push("test/testcase");
+    let mut testcase_paths = Vec::new();
+    let paths = fs::read_dir(testcase_dir_path)?;
+    for path in paths.into_iter() {
+        testcase_paths.push(path?.path());
+    }
+    println!("{:?}",testcase_paths);
+    return Ok(testcase_paths.clone());
+}
+
+/**
  * C++のファイルを指定し，そのプログラムを実行する
  * @param cpp_path C++ファイルへのパス
  * @param exec_args C++実行形式ファイルのコマンドライン引数
