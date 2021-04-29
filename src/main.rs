@@ -1,7 +1,6 @@
 use anyhow::{bail, Result};
 use clap::Clap;
-use std::env;
-use std::fs::{self, File};
+use std::fs::{File};
 use std::io::{BufRead, BufReader};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
@@ -9,6 +8,8 @@ use std::process::{Command, Stdio};
 
 mod print_error;
 pub use crate::print_error::PrintError;
+mod fileio;
+pub use crate::fileio::MyFileIO;
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -22,7 +23,7 @@ struct Opts {}
 fn main() -> Result<()> {
     Opts::parse();
     /* プロジェクトのルートパスを取得 */
-    let root_path = get_root_path();
+    let root_path = MyFileIO::get_root_path();
 
     /* ロゴを出力 */
     print_logo(root_path.clone())?;
@@ -33,23 +34,12 @@ fn main() -> Result<()> {
     /* generatorで生成したファイルパスの取得 */
     let mut testcase_dir_path = root_path.clone();
     testcase_dir_path.push("test/testcase");
-    let testcase_path_list = get_path_list(testcase_dir_path.clone())?;
+    let testcase_path_list = MyFileIO::get_path_list(testcase_dir_path.clone())?;
 
+    /* smartなプログラムを実行 */
     smart(root_path.clone(), &testcase_path_list)?;
 
     Ok(())
-}
-
-/**
- * プロジェクトのルートパスを取得
- * @return プロジェクトのルートパス
- */
-fn get_root_path() -> PathBuf {
-    let mut exec_path = env::current_exe().unwrap();
-    for _i in 0..3 {
-        exec_path.pop();
-    }
-    exec_path
 }
 
 /**
@@ -84,22 +74,6 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 }
 
 /**
- * 特定ディレクトリ内のファイルパス一覧を取得
- * @param dir_path 一覧を取得したいディレクトリへの絶対パス
- * @return 異常終了: エラー
- *         正常終了: パスが入った配列
- */
-fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
-    let mut file_paths = Vec::new();
-    let paths = fs::read_dir(dir_path)?;
-    for path in paths.into_iter() {
-        file_paths.push(path?.path());
-    }
-    file_paths.sort();
-    return Ok(file_paths.clone());
-}
-
-/**
  * smartを実行
  * @param smart_path 実行形式ファイルへの絶対パス
  * @param testcase_paths テストケースのパス一覧
@@ -121,7 +95,11 @@ fn smart(mut smart_path: PathBuf, testcase_paths: &Vec<PathBuf>) -> Result<()> {
             test_num + 1,
             testcase_paths.len()
         );
-        println!("{}\n", exec_output);
+        if exec_output.len() < 50 {
+            println!("{}\n", exec_output);
+        } else {
+            println!("Output data is too large.\n");
+        }
     }
     Ok(())
 }
@@ -233,7 +211,7 @@ mod tests {
      */
     fn print_logo_test() {
         /* 正常パス */
-        let mut root_path = get_root_path();
+        let mut root_path = MyFileIO::get_root_path();
         root_path.pop(); // testでは実行ファイルパスに'/target'が付く
         let result_ok = print_logo(root_path.clone());
         assert!(result_ok.is_ok());
@@ -250,7 +228,7 @@ mod tests {
      */
     fn exec_generator_test() {
         /* 正常ファイル */
-        let mut generator_path = get_root_path();
+        let mut generator_path = MyFileIO::get_root_path();
         generator_path.pop();
         generator_path.push("test/generator.cpp");
         let mut generator_root_path = generator_path.clone();
@@ -261,7 +239,7 @@ mod tests {
         assert_eq!(exec_output, String::from(""));
 
         /* コンパイルエラーファイル */
-        let mut generator_path_com_err = get_root_path();
+        let mut generator_path_com_err = MyFileIO::get_root_path();
         generator_path_com_err.pop();
         generator_path_com_err.push("test/generator_compile_err.cpp");
         let mut generator_root_path_com_err = generator_path_com_err.clone();
@@ -275,7 +253,7 @@ mod tests {
         assert!(exec_output_com_err.is_err());
 
         /* ランタイムエラーファイル */
-        let mut generator_path_exec_err = get_root_path();
+        let mut generator_path_exec_err = MyFileIO::get_root_path();
         generator_path_exec_err.pop();
         generator_path_exec_err.push("test/generator_compile_err.cpp");
         let mut generator_root_path_exec_err = generator_path_exec_err.clone();
