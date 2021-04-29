@@ -22,12 +22,19 @@ fn main() -> Result<()> {
     Opts::parse();
     /* プロジェクトのルートパスを取得 */
     let root_path = get_root_path();
+    
     /* ロゴを出力 */
     print_logo(root_path.clone())?;
+    
     /* generatorを実行 */
     generator(root_path.clone())?;
+    
     /* generatorで生成したファイルパスの取得 */
-    let _v = get_testcase_paths(root_path);
+    let mut testcase_dir_path = root_path.clone();
+    testcase_dir_path.push("test/testcase");
+    let _v = get_path_list(testcase_dir_path.clone())?;
+    println!("{:?}", _v);
+    
     Ok(())
 }
 
@@ -76,20 +83,18 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
 }
 
 /**
- * generatorで生成したファイルパスの取得
- * @param testcase_path 実行形式ファイルへの絶対パス
+ * 特定ディレクトリ内のファイルパス一覧を取得
+ * @param dir_path 一覧を取得したいディレクトリへの絶対パス
  * @return 異常終了: エラー
- *         正常終了: テストケースへのパスが入った配列
+ *         正常終了: パスが入った配列
  */
-fn get_testcase_paths(mut testcase_dir_path: PathBuf) -> Result<Vec<PathBuf>> {
-    testcase_dir_path.push("test/testcase");
-    let mut testcase_paths = Vec::new();
-    let paths = fs::read_dir(testcase_dir_path)?;
+fn get_path_list(dir_path: PathBuf) -> Result<Vec<PathBuf>> {
+    let mut file_paths = Vec::new();
+    let paths = fs::read_dir(dir_path)?;
     for path in paths.into_iter() {
-        testcase_paths.push(path?.path());
+        file_paths.push(path?.path());
     }
-    println!("{:?}",testcase_paths);
-    return Ok(testcase_paths.clone());
+    return Ok(file_paths.clone());
 }
 
 /**
