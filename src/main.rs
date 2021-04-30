@@ -112,6 +112,8 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     if SETTING.logging.dump_exe_result {
         println!("=== generator output ===");
         println!("{}\n", exec_output);
+    } else {
+        println!("generator is done.",);
     }
     Ok(())
 }
@@ -163,6 +165,13 @@ fn exec_user_program(
                 let sliced_output = &exec_output_format[0..end];
                 println!("{}\x1b[m\n......\n", &sliced_output);
             }
+        } else {
+            println!(
+                "{} output ({}/{}) is done.",
+                program_type,
+                test_num + 1,
+                testcase_paths.len()
+            );
         }
         /* 実行結果をファイル書き込み */
         let mut output_path = program_root_path.clone();
