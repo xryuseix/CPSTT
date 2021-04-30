@@ -1,4 +1,4 @@
-use ansi_term::Colour::{Green, Red, Yellow};
+use ansi_term::Colour::{Cyan, Green, Red, Yellow};
 
 pub struct PrintError {}
 
@@ -42,5 +42,13 @@ impl PrintColorize {
      */
     pub fn print_yellow(msg: String) -> String {
         return Yellow.bold().paint(msg).to_string();
+    }
+
+    /**
+     * 色を水色に変換
+     * @param msg 表示内容
+     */
+    pub fn print_cyan(msg: String) -> String {
+        return Cyan.bold().paint(msg).to_string();
     }
 }

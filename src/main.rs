@@ -113,8 +113,11 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
     let exec_output = exec_generator(generator_path.clone(), &args, &generator_root_path)?;
     if SETTING.logging.dump_exe_result {
-        println!("=== generator output ===");
-        println!("{}\n", exec_output);
+        println!(
+            "{} is done.",
+            PrintColorize::print_cyan(String::from("[ generator ]"))
+        );
+        println!("{}", exec_output);
     } else {
         println!("generator is done.",);
     }
@@ -141,15 +144,15 @@ fn exec_user_program(
         let exec_output = exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
         if SETTING.logging.dump_exe_result {
             println!(
-                "=== {} output ({}/{}) ===",
-                program_type,
+                "{} ({}/{}) is done.",
+                PrintColorize::print_cyan(format!("[ {} ]", program_type)),
                 i + 1,
                 testcase_paths.len()
             );
             let max_len = SETTING.execution.max_output_len as usize;
             if exec_output.len() < max_len {
                 /* 実行結果の文字列が短い場合 */
-                println!("{}\n", exec_output);
+                println!("{}", exec_output);
             } else {
                 /* 実行結果の文字列が長い場合 */
                 let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
@@ -158,7 +161,7 @@ fn exec_user_program(
                     (SETTING.execution.max_output_line - 1) as usize,
                 );
                 println!(
-                    "Output data is too large. (content-size: {})\n",
+                    "Output data is too large. (content-size: {})",
                     exec_output.len()
                 );
                 let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
@@ -167,8 +170,8 @@ fn exec_user_program(
             }
         } else {
             println!(
-                "{} output ({}/{}) is done.",
-                program_type,
+                "{} ({}/{}) is done.",
+                PrintColorize::print_cyan(format!("[ {} ]", program_type)),
                 i + 1,
                 testcase_paths.len()
             );
@@ -308,14 +311,16 @@ fn compare_result(root_path: PathBuf) -> Result<()> {
         if smart_content == stupid_content {
             accepted += 1;
             println!(
-                "[ test ] {}: {}",
+                "{} {}: {}",
+                PrintColorize::print_cyan(String::from("[ test ]")),
                 PrintColorize::print_green(String::from("AC")),
                 smart.file_name().unwrap().to_str().unwrap()
             );
         } else {
             wrong_answer += 1;
             println!(
-                "[ test ] {}: {}",
+                "{} {}: {}",
+                PrintColorize::print_cyan(String::from("[ test ]")),
                 PrintColorize::print_yellow(String::from("WA")),
                 smart.file_name().unwrap().to_str().unwrap()
             );
@@ -323,7 +328,8 @@ fn compare_result(root_path: PathBuf) -> Result<()> {
     }
     /* 結果を出力 */
     println!(
-        "[result]  {}: {}, {}: {}, testcase: {}",
+        "{} {}: {}, {}: {} (testcase: {})",
+        PrintColorize::print_cyan(String::from("[ result ]")),
         PrintColorize::print_green(String::from("AC")),
         accepted,
         PrintColorize::print_yellow(String::from("WA")),
