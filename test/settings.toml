@@ -6,4 +6,4 @@ max_output_line = 4
 
 [logging]
 # ユーザプログラム実行結果の表示有無
-dump_exe_result = true
+dump_exe_result = false
