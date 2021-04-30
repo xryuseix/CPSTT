@@ -118,7 +118,10 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
         );
         println!("{}", exec_output);
     } else {
-        println!("generator is done.",);
+        println!(
+            "{} is done.",
+            PrintColorize::print_cyan(String::from("[ generator ]"))
+        );
     }
     Ok(())
 }
