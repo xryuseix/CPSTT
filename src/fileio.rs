@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::env;
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub use crate::print_console::PrintError;
 
@@ -47,7 +47,9 @@ impl MyFileIO {
      */
     pub fn get_root_path() -> PathBuf {
         let mut exec_path = env::current_dir().unwrap();
-        if exec_path.file_name().unwrap().to_str().unwrap() == String::from("cpstt"){
+        if exec_path.file_name().unwrap().to_str().unwrap() == String::from("cpstt")
+            && Path::new("test").exists()
+        {
             exec_path.push("test");
         }
         exec_path

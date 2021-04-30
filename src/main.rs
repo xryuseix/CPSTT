@@ -28,7 +28,7 @@ fn main() -> Result<()> {
 
     /* プログラムの初期化 */
     init(root_path.clone())?;
-    
+
     /* generatorを実行 */
     generator(root_path.clone())?;
 
