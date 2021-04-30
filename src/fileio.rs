@@ -6,7 +6,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 
-pub use crate::print_error::PrintError;
+pub use crate::print_console::PrintError;
 
 pub struct MyFileIO {}
 
