@@ -3,6 +3,10 @@ name = "cpstt"
 version = "1.0.0"
 authors = ["xryuseix"]
 edition = "2018"
+license = "MIT"
+description = "Competitive Programming Stress Test Tools"
+repository = "https://github.com/xryuseix/CPSTT"
+readme = "README.md"
 
 [dependencies]
 ansi_term = "0.12.1"
