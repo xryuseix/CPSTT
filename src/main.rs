@@ -136,17 +136,14 @@ fn exec_user_program(
     let mut program_root_path = program_path.clone();
     program_root_path.pop();
 
-    for test_num in 0..testcase_paths.len() {
-        let args = vec![
-            String::from("<"),
-            String::from(testcase_paths[test_num].to_str().unwrap()),
-        ];
+    for (i, testcase) in testcase_paths.iter().enumerate() {
+        let args = vec![String::from("<"), String::from(testcase.to_str().unwrap())];
         let exec_output = exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
         if SETTING.logging.dump_exe_result {
             println!(
                 "=== {} output ({}/{}) ===",
                 program_type,
-                test_num + 1,
+                i + 1,
                 testcase_paths.len()
             );
             let max_len = SETTING.execution.max_output_len as usize;
@@ -172,20 +169,14 @@ fn exec_user_program(
             println!(
                 "{} output ({}/{}) is done.",
                 program_type,
-                test_num + 1,
+                i + 1,
                 testcase_paths.len()
             );
         }
         /* 実行結果をファイル書き込み */
         let mut output_path = program_root_path.clone();
         output_path.push(format!("cpstt_out/{}", program_type));
-        output_path.push(
-            testcase_paths[test_num]
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap(),
-        );
+        output_path.push(testcase.file_name().unwrap().to_str().unwrap());
         output_path.set_extension("out");
         MyFileIO::write_file(&output_path, &exec_output)?;
     }
