@@ -3,6 +3,7 @@ use clap::Clap;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 mod fileio;
 mod print_console;
@@ -143,13 +144,23 @@ fn exec_user_program(
 
     for (i, testcase) in testcase_paths.iter().enumerate() {
         let args = vec![String::from("<"), String::from(testcase.to_str().unwrap())];
-        let exec_output = exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
+        let (exec_output, exec_time) =
+            exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
+        /* 実行時間がTLEか判定 */
+        let is_tle = if exec_time < Duration::new(2, 100_000_000) {
+            String::from("done")
+        } else {
+            PrintColorize::print_yellow(String::from("TLE"))
+        };
         if SETTING.logging.dump_exe_result {
             println!(
-                "{} ({}/{}) is done.",
+                "{} ({}/{}) is {}. ({}.{:03} sec)",
                 PrintColorize::print_cyan(format!("[ {} ]", program_type)),
                 i + 1,
-                testcase_paths.len()
+                testcase_paths.len(),
+                is_tle,
+                exec_time.as_secs(),
+                exec_time.subsec_nanos() / 1_000_000
             );
             let max_len = SETTING.execution.max_output_len as usize;
             if exec_output.len() < max_len {
@@ -172,10 +183,13 @@ fn exec_user_program(
             }
         } else {
             println!(
-                "{} ({}/{}) is done.",
+                "{} ({}/{}) is {}. ({}.{:03} sec)",
                 PrintColorize::print_cyan(format!("[ {} ]", program_type)),
                 i + 1,
-                testcase_paths.len()
+                testcase_paths.len(),
+                is_tle,
+                exec_time.as_secs(),
+                exec_time.subsec_nanos() / 1_000_000
             );
         }
         /* 実行結果をファイル書き込み */
@@ -260,18 +274,22 @@ fn exec_cpp_program(
     cpp_path: PathBuf,
     exec_args: &Vec<String>,
     root_path: &PathBuf,
-) -> Result<String> {
+) -> Result<(String, Duration)> {
     compile(&cpp_path)?;
     let exec_cat = Command::new("cat")
         .args(&[exec_args[1].clone()])
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to load testcase");
+
+    let start = Instant::now(); // 時間計測開始
     let exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
         .args(exec_args)
         .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
         .output()
         .expect("Failed to execution C++ program");
+    let end = start.elapsed();
+
     let exec_stdout = String::from_utf8_lossy(&exec_cpp.stdout);
     let exec_stderr = String::from_utf8_lossy(&exec_cpp.stderr);
     if exec_stderr != String::from("") {
@@ -282,7 +300,7 @@ fn exec_cpp_program(
         ));
         bail!("Some Error is occurred!");
     }
-    Ok(exec_stdout.into_owned())
+    Ok((exec_stdout.into_owned(), end))
 }
 
 /**
