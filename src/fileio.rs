@@ -42,13 +42,13 @@ lazy_static! {
 
 impl MyFileIO {
     /**
-     * プロジェクトのルートパスを取得
-     * @return プロジェクトのルートパス
+     * testへパスを取得
+     * @return testへパス
      */
     pub fn get_root_path() -> PathBuf {
-        let mut exec_path = env::current_exe().unwrap();
-        for _i in 0..3 {
-            exec_path.pop();
+        let mut exec_path = env::current_dir().unwrap();
+        if exec_path.file_name().unwrap().to_str().unwrap() == String::from("cpstt"){
+            exec_path.push("test");
         }
         exec_path
     }
