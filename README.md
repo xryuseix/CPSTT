@@ -11,7 +11,7 @@
 ## このプログラムの役割
 
 1. ![Wrong Answer](./images/wa.png) のプログラムに対して，それより実行時間がかかるが確実に ![Accepted](./images/ac.png) できる愚直プログラムと比較することで， ![Wrong Answer](./images/wa.png) となるテストケースを探し出す
-2. 最大コーナーケースに対して，実行時間以内に ![Accepted](./images/ac.png) ができるかテストをする(未実装)
+2. 最大コーナーケースに対して，実行時間以内に ![Accepted](./images/ac.png) ができるかテストをする
 
 ## デモンストレーション
 
@@ -143,3 +143,7 @@ stupid.cpp が出力した実行結果を保存する
 ### testcase/
 
 generator.cpp の出力先 (テストケースの保存先)
+
+## 注意
+
+stupid.cpp や smart.cpp が TLE した場合にプログラム実行打ち切りする機能はありません．地球が爆発するようなプログラムは書かないようにしましょう．
