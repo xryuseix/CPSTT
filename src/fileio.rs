@@ -13,12 +13,18 @@ pub struct MyFileIO {}
 #[derive(Debug, Deserialize)]
 pub struct SettingsClass {
     pub execution: ExecutionSettings,
+    pub logging: LoggingSettings,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ExecutionSettings {
     pub max_output_len: i32,
     pub max_output_line: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoggingSettings {
+    pub dump_exe_result: bool,
 }
 
 lazy_static! {

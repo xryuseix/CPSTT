@@ -109,8 +109,10 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
     /* generatorを実行 */
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
     let exec_output = exec_generator(generator_path.clone(), &args, &generator_root_path)?;
-    println!("=== generator output ===");
-    println!("{}\n", exec_output);
+    if SETTING.logging.dump_exe_result {
+        println!("=== generator output ===");
+        println!("{}\n", exec_output);
+    }
     Ok(())
 }
 
@@ -135,30 +137,32 @@ fn exec_user_program(
             String::from(testcase_paths[test_num].to_str().unwrap()),
         ];
         let exec_output = exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
-        println!(
-            "=== {} output ({}/{}) ===",
-            program_type,
-            test_num + 1,
-            testcase_paths.len()
-        );
-        let max_len = SETTING.execution.max_output_len as usize;
-        if exec_output.len() < max_len {
-            /* 実行結果の文字列が短い場合 */
-            println!("{}\n", exec_output);
-        } else {
-            /* 実行結果の文字列が長い場合 */
-            let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
-                "\x1b[33m\\n\x1b[m",
-                "\n",
-                (SETTING.execution.max_output_line - 1) as usize,
-            );
+        if SETTING.logging.dump_exe_result {
             println!(
-                "Output data is too large. (content-size: {})\n",
-                exec_output.len()
+                "=== {} output ({}/{}) ===",
+                program_type,
+                test_num + 1,
+                testcase_paths.len()
             );
-            let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
-            let sliced_output = &exec_output_format[0..end];
-            println!("{}\x1b[m\n......\n", &sliced_output);
+            let max_len = SETTING.execution.max_output_len as usize;
+            if exec_output.len() < max_len {
+                /* 実行結果の文字列が短い場合 */
+                println!("{}\n", exec_output);
+            } else {
+                /* 実行結果の文字列が長い場合 */
+                let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
+                    "\x1b[33m\\n\x1b[m",
+                    "\n",
+                    (SETTING.execution.max_output_line - 1) as usize,
+                );
+                println!(
+                    "Output data is too large. (content-size: {})\n",
+                    exec_output.len()
+                );
+                let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
+                let sliced_output = &exec_output_format[0..end];
+                println!("{}\x1b[m\n......\n", &sliced_output);
+            }
         }
         /* 実行結果をファイル書き込み */
         let mut output_path = program_root_path.clone();
