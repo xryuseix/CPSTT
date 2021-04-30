@@ -7,9 +7,9 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 mod fileio;
-mod print_error;
+mod print_console;
 pub use crate::fileio::{MyFileIO, SETTING};
-pub use crate::print_error::PrintError;
+pub use crate::print_console::{PrintColorize, PrintError};
 
 #[derive(Clap, Debug)]
 #[clap(
@@ -52,6 +52,9 @@ fn main() -> Result<()> {
         &testcase_path_list,
         String::from("stupid"),
     )?;
+
+    /* smartとstupidを比較 */
+    compare_result(root_path.clone())?;
 
     Ok(())
 }
@@ -284,6 +287,59 @@ fn exec_cpp_program(
         bail!("Some Error is occurred!");
     }
     Ok(exec_stdout.into_owned())
+}
+
+/**
+ * smartとstupidの結果を比較する
+ * @param root_path 本プログラムへの絶対パス
+ * @return 異常終了: エラー
+ *         正常終了: 実行結果の文字列
+ */
+fn compare_result(root_path: PathBuf) -> Result<()> {
+    /* フォルダパスの生成 */
+    let mut smart_test_path = root_path.clone();
+    smart_test_path.push("test/cpstt_out/smart");
+    let mut stupid_test_path = root_path.clone();
+    stupid_test_path.push("test/cpstt_out/stupid");
+    /* テストケースのパスの取得 */
+    let smart_test = MyFileIO::get_path_list(smart_test_path).unwrap();
+    let stupid_test = MyFileIO::get_path_list(stupid_test_path).unwrap();
+
+    let mut accepted = 0;
+    let mut wrong_answer = 0;
+
+    /* ファイルを読み込みながら比較 */
+    for (smart, stupid) in (smart_test.iter()).zip(stupid_test.iter()) {
+        /* ファイルを読み込み */
+        let smart_content = MyFileIO::read_file(String::from(smart.to_str().unwrap()))?;
+        let stupid_content = MyFileIO::read_file(String::from(stupid.to_str().unwrap()))?;
+        /* 比較 */
+        if smart_content == stupid_content {
+            accepted += 1;
+            println!(
+                "[ test ] {}: {}",
+                PrintColorize::print_green(String::from("AC")),
+                smart.file_name().unwrap().to_str().unwrap()
+            );
+        } else {
+            wrong_answer += 1;
+            println!(
+                "[ test ] {}: {}",
+                PrintColorize::print_yellow(String::from("WA")),
+                smart.file_name().unwrap().to_str().unwrap()
+            );
+        }
+    }
+    /* 結果を出力 */
+    println!(
+        "[result]  {}: {}, {}: {}, testcase: {}",
+        PrintColorize::print_green(String::from("AC")),
+        accepted,
+        PrintColorize::print_yellow(String::from("WA")),
+        wrong_answer,
+        accepted + wrong_answer
+    );
+    Ok(())
 }
 
 #[cfg(test)]
