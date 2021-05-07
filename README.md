@@ -118,8 +118,8 @@ int main(int argc, char *argv[]) {
 max_output_len = 200
 # ユーザプログラム実行結果の最大表示行数
 max_output_line = 4
-# ユーザプログラムのTime Limit(ms)
-time_limit = 2000
+# 実行形式ファイルの拡張子
+bin_extension = "out"
 
 [logging]
 # ユーザプログラム実行結果の表示有無
