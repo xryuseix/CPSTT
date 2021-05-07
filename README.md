@@ -36,6 +36,7 @@ cpstt # 実行
 ```sh
 /path/to/YourCodingDirectory
 |--cpstt_out/
+| |--bin/
 | |--smart/
 | |--stupid/
 |--generator.cpp
@@ -96,14 +97,14 @@ int main(int argc, char *argv[]) {
 ### smart.cpp
 
 - 競技プログラミングの問題を解くプログラムのここに記述する
-- stupid.cpp と入れ替えても良いが，名前の通り効率の**良い**プログラムを記載することを勧める
+- `stupid.cpp` と入れ替えても良いが，名前の通り効率の**良い**プログラムを記載することを推奨する
 
 [参考プログラム](https://github.com/xryuseix/CPSTT/blob/master/test/smart.cpp)
 
 ### stupid.cpp
 
 - 競技プログラミングの問題を解くプログラムのここに記述する
-- smart.cpp と入れ替えても良いが，名前の通り効率の**悪い**プログラムを記載することを勧める
+- `smart.cpp` と入れ替えても良いが，名前の通り効率の**悪い**プログラムを記載することを推奨する
 
 [参考プログラム](https://github.com/xryuseix/CPSTT/blob/master/test/stupid.cpp)
 
@@ -118,6 +119,8 @@ int main(int argc, char *argv[]) {
 max_output_len = 200
 # ユーザプログラム実行結果の最大表示行数
 max_output_line = 4
+# ユーザプログラムのTime Limit(ms)
+time_limit = 2200
 # 実行形式ファイルの拡張子
 bin_extension = "out"
 
@@ -132,16 +135,20 @@ dump_exe_result = false
 
 ### cpstt_out/
 
-smart.cpp と stupid.cpp が出力した実行結果を保存する
+`smart.cpp` と `stupid.cpp` が出力した実行結果と，生成したバイナリファイルを保存する
 
 ### cpstt_out/smart/
 
-smart.cpp が出力した実行結果を保存する
+`smart.cpp` が出力した実行結果を保存する
 
 ### cpstt_out/stupid/
 
-stupid.cpp が出力した実行結果を保存する
+`stupid.cpp` が出力した実行結果を保存する
+
+### cpstt_out/bin/
+
+`stupid.cpp`, `smart.cpp`, `generator.cpp` をコンパイルしたバイナリファイル保存する
 
 ### testcase/
 
-generator.cpp の出力先 (テストケースの保存先)
+`generator.cpp` の出力先 (テストケースの保存先)
