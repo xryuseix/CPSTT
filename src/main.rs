@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
-use std::{thread, time};
 
 mod fileio;
 mod print_console;
@@ -147,14 +147,10 @@ fn exec_user_program(
 
     for (i, testcase) in testcase_paths.iter().enumerate() {
         let args = vec![String::from("<"), String::from(testcase.to_str().unwrap())];
-        let (exec_output, exec_time) =
+        let (exec_output, exec_time, is_tle) =
             exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
         /* 実行時間がTLEか判定 */
-        let is_tle = if exec_time < Duration::new(2, 100_000_000) {
-            String::from("done")
-        } else {
-            PrintColorize::print_yellow(String::from("TLE"))
-        };
+
         if SETTING.logging.dump_exe_result {
             println!(
                 "{} ({}/{}) is {}. ({}.{:03} sec)",
@@ -277,7 +273,7 @@ fn exec_cpp_program(
     cpp_path: PathBuf,
     exec_args: &Vec<String>,
     root_path: &PathBuf,
-) -> Result<(String, Duration)> {
+) -> Result<(String, Duration, String)> {
     compile(&cpp_path)?;
     let exec_cat = Command::new("cat")
         .args(&[exec_args[1].clone()])
@@ -285,20 +281,23 @@ fn exec_cpp_program(
         .spawn()
         .expect("Failed to load testcase");
 
-    let start = Instant::now(); // 時間計測開始
-    let mut _is_exec_fin = Arc::new(Mutex::new(false));
-    // let mut stdout = String::from("");
-
     /* メインスレッドとサブスレッドのデータ送受信チャンネル */
     let (sender_root_path, receiver_root_path) = mpsc::channel();
-    let (sender_args, receiver_args) = mpsc::channel();
-    let output = Arc::new(Mutex::new(vec![String::from(""), String::from("")]));
     sender_root_path.send(root_path.clone()).unwrap();
+    let (sender_args, receiver_args) = mpsc::channel();
     sender_args.send(exec_args.clone()).unwrap();
+
+    /* サブスレッドからのデータ書き込み先 */
+    let output = Arc::new(Mutex::new(vec![String::from(""), String::from("")]));
     let output_ref = output.clone();
+    let exec_time = Arc::new(Mutex::new(Duration::new(0, 0)));
+    let exec_ref = exec_time.clone();
+
+    /* 時間計測開始 */
+    let start = Instant::now();
 
     /* C++プログラムの実行 */
-    let _handle1 = thread::spawn(move || {
+    thread::spawn(move || {
         let root_path = receiver_root_path.recv().unwrap();
         let exec_args = receiver_args.recv().unwrap();
         let exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
@@ -306,30 +305,27 @@ fn exec_cpp_program(
             .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
             .output()
             .expect("Failed to execution C++ program");
+        /* 実行結果の書き込み */
         let mut output = output_ref.lock().unwrap();
         output[0] = String::from_utf8_lossy(&exec_cpp.stdout).into_owned();
-        // sender_stderr
-        //     .send(String::from_utf8_lossy(&exec_cpp.stderr).into_owned())
-        //     .unwrap();
+        output[1] = String::from_utf8_lossy(&exec_cpp.stderr).into_owned();
+        /* 実行時間の書き込み */
+        let mut exec_time = exec_ref.lock().unwrap();
+        *exec_time = start.elapsed();
     });
-    let stderr = "".to_string(); //receiver_stderr.recv().unwrap();
-    println!("{:?}", output);
-    
-    /* 3秒スリープの実行 */
+
+    /* スリープの実行 */
     let handle2 = thread::spawn(move || {
-        thread::sleep(time::Duration::from_millis(1000)); // TODO: ここ書き換える
+        thread::sleep(Duration::from_millis(100)); // TODO: ここ書き換える
     });
     let _ = handle2.join();
-    println!("{:?}", output);
-    
-    // if stdout == String::from("") {
-    //     println!("AAAAAAAAAAAAAAAAA");
-    // }
 
-    let end = start.elapsed();
+    let end = *exec_time.lock().unwrap();
+    let std_out_err = (*output.lock().unwrap()).clone();
 
-    if stderr != String::from("") {
-        eprintln!("{}", stderr);
+    /* 実行時エラーの処理 */
+    if std_out_err[1] != String::from("") {
+        eprintln!("{}", std_out_err[1]);
         PrintError::print_error(format!(
             "It seems execution error [{}]",
             cpp_path.to_str().unwrap()
@@ -337,7 +333,13 @@ fn exec_cpp_program(
         bail!("Some Error is occurred!");
     }
 
-    Ok(("".to_string(), end))
+    /* TLE判定 */
+    let is_tle = if end != Duration::new(0, 0) {
+        String::from("done")
+    } else {
+        PrintColorize::print_yellow(String::from("TLE"))
+    };
+    Ok((std_out_err[0].clone(), end, is_tle))
 }
 
 /**
