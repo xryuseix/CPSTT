@@ -1,5 +1,7 @@
 use anyhow::{bail, Result};
 use clap::Clap;
+use rand::Rng;
+// use toml::to_string;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -157,7 +159,7 @@ fn exec_user_program(
             program_root_path: PathBuf,
             testcase: PathBuf,
             testcase_len: usize,
-            program_type: String
+            program_type: String,
         }
         let send_data = SenderData {
             program_path: program_path.clone(),
@@ -171,9 +173,16 @@ fn exec_user_program(
         handles.push(thread::spawn(move || {
             /* メインスレッドから受け取り */
             let rcv_data = receiver_data.recv().unwrap();
-            let args = vec![String::from("<"), String::from(rcv_data.testcase.to_str().unwrap())];
-            let (exec_output, exec_time, is_tle) =
-                exec_cpp_program(rcv_data.program_path.clone(), &args, &rcv_data.program_root_path).unwrap();
+            let args = vec![
+                String::from("<"),
+                String::from(rcv_data.testcase.to_str().unwrap()),
+            ];
+            let (exec_output, exec_time, is_tle) = exec_cpp_program(
+                rcv_data.program_path.clone(),
+                &args,
+                &rcv_data.program_root_path,
+            )
+            .unwrap();
             if SETTING.logging.dump_exe_result {
                 println!(
                     "{} ({}/{}) is {}. ({}.{:03} sec)",
@@ -232,10 +241,11 @@ fn exec_user_program(
 /**
  * C++のファイルを指定し，そのプログラムをコンパイルする
  * @param cpp_path C++ファイルへのパス
+ * @param id C++プログラムID
  * @return 異常終了: エラー
  *         正常終了: 実行結果の文字列
  */
-fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
+fn compile(cpp_path: &PathBuf, id: String) -> Result<(), anyhow::Error> {
     let mut dir_root_path = cpp_path.clone();
     dir_root_path.pop();
     let compile_output = Command::new("g++")
@@ -245,6 +255,8 @@ fn compile(cpp_path: &PathBuf) -> Result<(), anyhow::Error> {
             "-fsanitize=undefined",
             "-I",
             ".",
+            "-o",
+            &id,
             cpp_path.to_str().unwrap(),
         ])
         .current_dir(dir_root_path.to_str().unwrap())
@@ -273,7 +285,7 @@ fn exec_generator(
     exec_args: &Vec<String>,
     root_path: &PathBuf,
 ) -> Result<String> {
-    compile(&cpp_path)?;
+    compile(&cpp_path, String::from("a.out"))?;
     let exec_output = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
         .args(exec_args)
         .output()
@@ -302,7 +314,11 @@ fn exec_cpp_program(
     exec_args: &Vec<String>,
     root_path: &PathBuf,
 ) -> Result<(String, Duration, String)> {
-    compile(&cpp_path)?;
+    /* 乱数生成 */
+    let rand: u32 = rand::thread_rng().gen();
+    let id = String::from(format!("{}.out", rand.to_string()));
+    compile(&cpp_path, id.clone())?;
+
     let exec_cat = Command::new("cat")
         .args(&[exec_args[1].clone()])
         .stdout(Stdio::piped())
@@ -314,6 +330,8 @@ fn exec_cpp_program(
     sender_root_path.send(root_path.clone()).unwrap();
     let (sender_args, receiver_args) = mpsc::channel();
     sender_args.send(exec_args.clone()).unwrap();
+    let (sender_id, receiver_id) = mpsc::channel();
+    sender_id.send(id.clone()).unwrap();
 
     /* サブスレッドからのデータ書き込み先 */
     let output = Arc::new(Mutex::new(vec![String::from(""), String::from("")]));
@@ -328,7 +346,8 @@ fn exec_cpp_program(
     thread::spawn(move || {
         let root_path = receiver_root_path.recv().unwrap();
         let exec_args = receiver_args.recv().unwrap();
-        let exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
+        let id = receiver_id.recv().unwrap();
+        let exec_cpp = Command::new(format!("{}/{}", root_path.to_str().unwrap(), id))
             .args(exec_args)
             .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
             .output()
@@ -360,6 +379,16 @@ fn exec_cpp_program(
         ));
         bail!("Some Error is occurred!");
     }
+
+    /* 実行形式ファイルの削除 */
+    let _exec_cat = Command::new("rm")
+        .args(&[format!(
+            "{}/{}",
+            root_path.clone().to_string_lossy(),
+            id.clone()
+        )])
+        .spawn()
+        .expect("Failed to remove execfile");
 
     /* TLE判定 */
     let is_tle = if end != Duration::new(0, 0) {
