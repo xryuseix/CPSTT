@@ -18,7 +18,7 @@ pub use crate::print_console::{PrintColorize, PrintError};
 #[derive(Clap, Debug)]
 #[clap(
     name = "CPSTT",
-    version = "1.1.0",
+    version = "1.1.1",
     author = "xryuseix",
     about = "Competitive Programming Stress Test Tools"
 )]
@@ -150,6 +150,7 @@ fn exec_user_program(
 
     /* C++プログラムを全て並列実行 */
     let mut handles = Vec::new();
+    let finished_files = Arc::new(Mutex::new(0));
 
     for (i, testcase) in testcase_paths.iter().enumerate() {
         /* サブスレッドへデータを渡す */
@@ -168,6 +169,7 @@ fn exec_user_program(
             testcase_len: testcase_paths.len(),
             program_type: program_type.clone(),
         };
+        let finished_files_ref = finished_files.clone();
         sender_data.send(send_data).unwrap();
 
         handles.push(thread::spawn(move || {
@@ -177,22 +179,28 @@ fn exec_user_program(
                 String::from("<"),
                 String::from(rcv_data.testcase.to_str().unwrap()),
             ];
+            /* C++実行 */
             let (exec_output, exec_time, is_tle) = exec_cpp_program(
                 rcv_data.program_path.clone(),
                 &args,
                 &rcv_data.program_root_path,
             )
             .unwrap();
+            /* 結果を出力 */
+            let mut finished_files = finished_files_ref.lock().unwrap();
+            *finished_files += 1;
+            let crr_finished_file = *finished_files;
+            println!(
+                "{} testcase::{:02} ({:2}/{:2}) is {}. ({}.{:03} sec)",
+                PrintColorize::print_cyan(format!("[ {} ]", rcv_data.program_type)),
+                i + 1,
+                crr_finished_file,
+                rcv_data.testcase_len,
+                is_tle,
+                exec_time.as_secs(),
+                exec_time.subsec_nanos() / 1_000_000
+            );
             if SETTING.logging.dump_exe_result {
-                println!(
-                    "{} ({}/{}) is {}. ({}.{:03} sec)",
-                    PrintColorize::print_cyan(format!("[ {} ]", rcv_data.program_type)),
-                    i + 1,
-                    rcv_data.testcase_len,
-                    is_tle,
-                    exec_time.as_secs(),
-                    exec_time.subsec_nanos() / 1_000_000
-                );
                 let max_len = SETTING.execution.max_output_len as usize;
                 if exec_output.len() < max_len {
                     /* 実行結果の文字列が短い場合 */
@@ -213,16 +221,6 @@ fn exec_user_program(
                     let sliced_output = &exec_output_format[0..end];
                     println!("{}\x1b[m\n......\n", &sliced_output);
                 }
-            } else {
-                println!(
-                    "{} ({}/{}) is {}. ({}.{:03} sec)",
-                    PrintColorize::print_cyan(format!("[ {} ]", rcv_data.program_type)),
-                    i + 1,
-                    rcv_data.testcase_len,
-                    is_tle,
-                    exec_time.as_secs(),
-                    exec_time.subsec_nanos() / 1_000_000
-                );
             }
             /* 実行結果をファイル書き込み */
             let mut output_path = rcv_data.program_root_path.clone();
