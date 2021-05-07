@@ -105,6 +105,10 @@ fn init(test_path: PathBuf) -> Result<()> {
     output_stupid_path.push("cpstt_out/stupid");
     MyFileIO::file_clean(output_stupid_path)?;
 
+    MyFileIO::file_clean(PathBuf::from(format!(
+        "{}/cpstt_out/bin/",
+        test_path.clone().to_string_lossy(),
+    )))?;
     Ok(())
 }
 
@@ -399,14 +403,14 @@ fn exec_cpp_program(
     }
 
     /* 実行形式ファイルの削除 */
-    let _exec_cat = Command::new("rm")
-        .args(&[format!(
-            "{}/cpstt_out/bin/{}",
-            root_path.clone().to_string_lossy(),
-            id.clone()
-        )])
-        .spawn()
-        .expect("Failed to remove execfile");
+    // let _exec_cat = Command::new("rm")
+    //     .args(&[format!(
+    //         "{}/cpstt_out/bin/{}",
+    //         root_path.clone().to_string_lossy(),
+    //         id.clone()
+    //     )])
+    //     .spawn()
+    //     .expect("Failed to remove execfile");
 
     /* TLE判定 */
     let is_tle = if end != Duration::new(0, 0) {
