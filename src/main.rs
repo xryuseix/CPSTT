@@ -1,11 +1,12 @@
 use anyhow::{bail, Result};
 use clap::Clap;
-use std::os::unix::io::{AsRawFd, FromRawFd};
+use std::{os::unix::io::{AsRawFd, FromRawFd}, thread::JoinHandle};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::{thread, time};
+use std::sync::mpsc;
 
 mod fileio;
 mod print_console;
@@ -285,47 +286,53 @@ fn exec_cpp_program(
         .expect("Failed to load testcase");
 
     let start = Instant::now(); // 時間計測開始
-    let mut handles = Vec::new();
     let mut _is_exec_fin = Arc::new(Mutex::new(false));
-    // let mut stderr: Cow<str>;
     /* C++プログラムの実行 */
-    let _exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
-        .args(exec_args)
-        .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
-        .output()
-        .expect("Failed to execution C++ program");
-    // stdout = String::from_utf8_lossy(&exec_cpp.stdout);
-    // stderr = String::from_utf8_lossy(&exec_cpp.stderr);
+    
+    // let stderr = Arc::new(Mutex::new(String::from("")));
+    // let stderr_ref = stderr.clone();
+    // let stdout  = Arc::new(Mutex::new(String::from("")));
+    // let stdout_ref = stdout.clone();
 
-    let stdout = Arc::new(Mutex::new(String::from("")));
-    let stdout_ref = stdout.clone();
-    handles.push(thread::spawn(move || {
-        let mut stdout = stdout_ref.lock().unwrap();
-        *stdout = String::from("AAAA");
-    }));
+    let (sender_root_path, receiver_root_path) = mpsc::channel();
+    sender_root_path.send(root_path.clone()).unwrap();
+    let (sender_args, receiver_args) = mpsc::channel();
+    sender_args.send(exec_args.clone()).unwrap();
+    let (sender2, receiver2) = mpsc::channel();
+
+    let _handle1 = thread::spawn(move || {
+        // let mut stdout = stdout_ref.lock().unwrap();
+        let root_path = receiver_root_path.recv().unwrap();
+        let exec_args = receiver_args.recv().unwrap();
+        let _exec_cpp = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
+            .args(exec_args)
+            .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
+            .output()
+            .expect("Failed to execution C++ program");
+        // *stdout = String::from_utf8_lossy(&exec_cpp.stdout).into_owned();
+        sender2.send("hi".to_string()).unwrap();
+    });
+    let val = receiver2.recv().unwrap();
+    println!("send from sub thread. {}", val);
     /* 3秒スリープの実行 */
-    handles.push(thread::spawn(move || {
-        thread::sleep(time::Duration::from_millis(100));
-    }));
-
-    for handle in handles {
-        let _ = handle.join();
-    }
-    // println!("Got: {}", *stdout.lock().unwrap());
+    let handle2 = thread::spawn(move || {
+        thread::sleep(time::Duration::from_millis(1000)); // TODO: ここ書き換える
+    });
+    let _ = handle2.join();
 
     let end = start.elapsed();
 
-    // if stderr != String::from("") {
-    //     eprintln!("{}", stderr);
+    // if *stderr.lock().unwrap() != String::from("") {
+    //     eprintln!("{}", *stderr.lock().unwrap());
     //     PrintError::print_error(format!(
     //         "It seems execution error [{}]",
     //         cpp_path.to_str().unwrap()
     //     ));
     //     bail!("Some Error is occurred!");
     // }
-    // Ok((stdout.into_owned(), end))
-    let stdout_res = &*stdout.lock().unwrap();
-    Ok((stdout_res.clone(), end))
+    // let stdout_res = &*stdout.lock().unwrap();
+    // Ok((stdout_res.clone(), end))
+    Ok(("AAA".to_string(), end))
 }
 
 /**
