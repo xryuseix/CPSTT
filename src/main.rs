@@ -226,7 +226,7 @@ fn exec_user_program(
             let mut output_path = rcv_data.program_root_path.clone();
             output_path.push(format!("cpstt_out/{}", rcv_data.program_type));
             output_path.push(rcv_data.testcase.file_name().unwrap().to_str().unwrap());
-            output_path.set_extension("out");
+            output_path.set_extension(&SETTING.execution.bin_extension);
             MyFileIO::write_file(&output_path, &exec_output).unwrap();
         }));
     }
@@ -283,10 +283,14 @@ fn exec_generator(
     exec_args: &Vec<String>,
     root_path: &PathBuf,
 ) -> Result<String> {
-    compile(&cpp_path, String::from("a.out"))?;
+    compile(
+        &cpp_path,
+        String::from(format!("generator{}", &SETTING.execution.bin_extension)),
+    )?;
     let exec_output = Command::new(format!(
-        "{}/cpstt_out/bin/a.out",
-        root_path.to_str().unwrap()
+        "{}/cpstt_out/bin/generator{}",
+        root_path.to_str().unwrap(),
+        &SETTING.execution.bin_extension
     ))
     .args(exec_args)
     .output()
@@ -317,7 +321,11 @@ fn exec_cpp_program(
 ) -> Result<(String, Duration, String)> {
     /* 乱数生成 */
     let rand: u32 = rand::thread_rng().gen();
-    let id = String::from(format!("{}.out", rand.to_string()));
+    let id = String::from(format!(
+        "{}{}",
+        rand.to_string(),
+        &SETTING.execution.bin_extension
+    ));
     compile(&cpp_path, id.clone())?;
 
     let exec_cat = Command::new("cat")
