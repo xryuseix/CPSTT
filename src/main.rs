@@ -16,7 +16,7 @@ pub use crate::print_console::{PrintColorize, PrintError};
 #[derive(Clap, Debug)]
 #[clap(
     name = "CPSTT",
-    version = "1.0.0",
+    version = "1.1.0",
     author = "xryuseix",
     about = "Competitive Programming Stress Test Tools"
 )]
