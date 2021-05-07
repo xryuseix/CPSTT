@@ -256,7 +256,7 @@ fn compile(cpp_path: &PathBuf, id: String) -> Result<(), anyhow::Error> {
             "-I",
             ".",
             "-o",
-            &id,
+            &(format!("cpstt_out/bin/{}", id)),
             cpp_path.to_str().unwrap(),
         ])
         .current_dir(dir_root_path.to_str().unwrap())
@@ -286,10 +286,13 @@ fn exec_generator(
     root_path: &PathBuf,
 ) -> Result<String> {
     compile(&cpp_path, String::from("a.out"))?;
-    let exec_output = Command::new(format!("{}/a.out", root_path.to_str().unwrap()))
-        .args(exec_args)
-        .output()
-        .expect("Failed to execution C++ program");
+    let exec_output = Command::new(format!(
+        "{}/cpstt_out/bin/a.out",
+        root_path.to_str().unwrap()
+    ))
+    .args(exec_args)
+    .output()
+    .expect("Failed to execution C++ program");
 
     let exec_stdout = String::from_utf8_lossy(&exec_output.stdout);
     let exec_stderr = String::from_utf8_lossy(&exec_output.stderr);
@@ -347,11 +350,15 @@ fn exec_cpp_program(
         let root_path = receiver_root_path.recv().unwrap();
         let exec_args = receiver_args.recv().unwrap();
         let id = receiver_id.recv().unwrap();
-        let exec_cpp = Command::new(format!("{}/{}", root_path.to_str().unwrap(), id))
-            .args(exec_args)
-            .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
-            .output()
-            .expect("Failed to execution C++ program");
+        let exec_cpp = Command::new(format!(
+            "{}/cpstt_out/bin/{}",
+            root_path.to_str().unwrap(),
+            id
+        ))
+        .args(exec_args)
+        .stdin(unsafe { Stdio::from_raw_fd(exec_cat.stdout.as_ref().unwrap().as_raw_fd()) })
+        .output()
+        .expect("Failed to execution C++ program");
         /* 実行結果の書き込み */
         let mut output = output_ref.lock().unwrap();
         output[0] = String::from_utf8_lossy(&exec_cpp.stdout).into_owned();
@@ -383,7 +390,7 @@ fn exec_cpp_program(
     /* 実行形式ファイルの削除 */
     let _exec_cat = Command::new("rm")
         .args(&[format!(
-            "{}/{}",
+            "{}/cpstt_out/bin/{}",
             root_path.clone().to_string_lossy(),
             id.clone()
         )])
