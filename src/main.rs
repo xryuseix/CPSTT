@@ -134,6 +134,7 @@ fn generator(mut generator_path: PathBuf) -> Result<()> {
  * smart/stupidを実行
  * @param program_path テストディレクトリへの絶対パス
  * @param testcase_paths テストケースのパス一覧
+ * @param program_type smart or stupid
  * @return 正常終了の有無
  */
 fn exec_user_program(
@@ -145,58 +146,85 @@ fn exec_user_program(
     let mut program_root_path = program_path.clone();
     program_root_path.pop();
 
-    for (i, testcase) in testcase_paths.iter().enumerate() {
-        let args = vec![String::from("<"), String::from(testcase.to_str().unwrap())];
-        let (exec_output, exec_time, is_tle) =
-            exec_cpp_program(program_path.clone(), &args, &program_root_path)?;
-        /* 実行時間がTLEか判定 */
+    /* C++プログラムを全て並列実行 */
+    let mut handles = Vec::new();
 
-        if SETTING.logging.dump_exe_result {
-            println!(
-                "{} ({}/{}) is {}. ({}.{:03} sec)",
-                PrintColorize::print_cyan(format!("[ {} ]", program_type)),
-                i + 1,
-                testcase_paths.len(),
-                is_tle,
-                exec_time.as_secs(),
-                exec_time.subsec_nanos() / 1_000_000
-            );
-            let max_len = SETTING.execution.max_output_len as usize;
-            if exec_output.len() < max_len {
-                /* 実行結果の文字列が短い場合 */
-                println!("{}", exec_output);
-            } else {
-                /* 実行結果の文字列が長い場合 */
-                let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
-                    "\x1b[33m\\n\x1b[m",
-                    "\n",
-                    (SETTING.execution.max_output_line - 1) as usize,
-                );
+    for (i, testcase) in testcase_paths.iter().enumerate() {
+        
+        /* サブスレッドへデータを渡す */
+        /* TODO: ここどうにかする */
+        let (sender_program_path, receiver_program_path) = mpsc::channel();
+        sender_program_path.send(program_path.clone()).unwrap();
+        let (sender_root_path, receiver_root_path) = mpsc::channel();
+        sender_root_path.send(program_root_path.clone()).unwrap();
+        let (sender_testcase_len, receiver_testcase_len) = mpsc::channel();
+        sender_testcase_len.send(testcase_paths.len()).unwrap();
+        let (sender_testcase, receiver_testcase) = mpsc::channel();
+        sender_testcase.send(testcase.clone()).unwrap();
+        let (sender_program_type, receiver_program_type) = mpsc::channel();
+        sender_program_type.send(program_type.clone()).unwrap();
+
+        handles.push(thread::spawn(move || {
+            /* メインスレッドから受け取り */
+            let program_path = receiver_program_path.recv().unwrap();
+            let program_root_path = receiver_root_path.recv().unwrap();
+            let testcase = receiver_testcase.recv().unwrap();
+            let testcase_len = receiver_testcase_len.recv().unwrap();
+            let program_type = receiver_program_type.recv().unwrap();
+
+            let args = vec![String::from("<"), String::from(testcase.to_str().unwrap())];
+            let (exec_output, exec_time, is_tle) =
+                exec_cpp_program(program_path.clone(), &args, &program_root_path).unwrap();
+            if SETTING.logging.dump_exe_result {
                 println!(
-                    "Output data is too large. (content-size: {})",
-                    exec_output.len()
+                    "{} ({}/{}) is {}. ({}.{:03} sec)",
+                    PrintColorize::print_cyan(format!("[ {} ]", program_type)),
+                    i + 1,
+                    testcase_len,
+                    is_tle,
+                    exec_time.as_secs(),
+                    exec_time.subsec_nanos() / 1_000_000
                 );
-                let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
-                let sliced_output = &exec_output_format[0..end];
-                println!("{}\x1b[m\n......\n", &sliced_output);
+                let max_len = SETTING.execution.max_output_len as usize;
+                if exec_output.len() < max_len {
+                    /* 実行結果の文字列が短い場合 */
+                    println!("{}", exec_output);
+                } else {
+                    /* 実行結果の文字列が長い場合 */
+                    let exec_output_format = exec_output.replace("\n", "\x1b[33m\\n\x1b[m").replacen(
+                        "\x1b[33m\\n\x1b[m",
+                        "\n",
+                        (SETTING.execution.max_output_line - 1) as usize,
+                    );
+                    println!(
+                        "Output data is too large. (content-size: {})",
+                        exec_output.len()
+                    );
+                    let end = exec_output_format.char_indices().nth(max_len).unwrap().0;
+                    let sliced_output = &exec_output_format[0..end];
+                    println!("{}\x1b[m\n......\n", &sliced_output);
+                }
+            } else {
+                println!(
+                    "{} ({}/{}) is {}. ({}.{:03} sec)",
+                    PrintColorize::print_cyan(format!("[ {} ]", program_type)),
+                    i + 1,
+                    testcase_len,
+                    is_tle,
+                    exec_time.as_secs(),
+                    exec_time.subsec_nanos() / 1_000_000
+                );
             }
-        } else {
-            println!(
-                "{} ({}/{}) is {}. ({}.{:03} sec)",
-                PrintColorize::print_cyan(format!("[ {} ]", program_type)),
-                i + 1,
-                testcase_paths.len(),
-                is_tle,
-                exec_time.as_secs(),
-                exec_time.subsec_nanos() / 1_000_000
-            );
-        }
-        /* 実行結果をファイル書き込み */
-        let mut output_path = program_root_path.clone();
-        output_path.push(format!("cpstt_out/{}", program_type));
-        output_path.push(testcase.file_name().unwrap().to_str().unwrap());
-        output_path.set_extension("out");
-        MyFileIO::write_file(&output_path, &exec_output)?;
+            /* 実行結果をファイル書き込み */
+            let mut output_path = program_root_path.clone();
+            output_path.push(format!("cpstt_out/{}", program_type));
+            output_path.push(testcase.file_name().unwrap().to_str().unwrap());
+            output_path.set_extension("out");
+            MyFileIO::write_file(&output_path, &exec_output).unwrap();
+        }));
+    }
+    for handle in handles {
+        let _ = handle.join();
     }
     Ok(())
 }
@@ -316,7 +344,7 @@ fn exec_cpp_program(
 
     /* スリープの実行 */
     let handle2 = thread::spawn(move || {
-        thread::sleep(Duration::from_millis(100)); // TODO: ここ書き換える
+        thread::sleep(Duration::from_millis(200)); // TODO: ここ書き換える
     });
     let _ = handle2.join();
 
