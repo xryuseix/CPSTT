@@ -17,15 +17,16 @@ pub use crate::print_console::{PrintColorize, PrintError};
 
 #[derive(Clap, Debug)]
 #[clap(
-    name = "CPSTT",
-    version = "1.1.1",
-    author = "xryuseix",
-    about = "Competitive Programming Stress Test Tools"
+    name = env!("CARGO_PKG_NAME"),
+    version = env!("CARGO_PKG_VERSION"),
+    author = env!("CARGO_PKG_AUTHORS"),
+    about= env!("CARGO_PKG_DESCRIPTION")
 )]
 struct Opts {}
 
 fn main() -> Result<()> {
     Opts::parse();
+
     /* テストディレクトリへのパスを取得 */
     let root_path = MyFileIO::get_root_path();
 
@@ -69,15 +70,19 @@ fn main() -> Result<()> {
  * @return 正常終了の有無
  */
 fn print_logo() -> Result<()> {
-    println!(r"-----------------------------------------");
-    println!(r"       __________  _________________     ");
-    println!(r"      / ____/ __ \/ ___/_  __/_  __/     ");
-    println!(r"     / /   / /_/ /\__ \ / /   / /        ");
-    println!(r"    / /___/ ____/___/ // /   / /         ");
-    println!(r"    \____/_/    /____//_/   /_/          ");
-    println!(r"                                         ");
-    println!(r"Competitive Programming Stress Test Tools");
-    println!(r"-----------------------------------------");
+    println!(r"---------------------------------------------");
+    println!(r"|         __________  _________________     |");
+    println!(r"|        / ____/ __ \/ ___/_  __/_  __/     |");
+    println!(r"|       / /   / /_/ /\__ \ / /   / /        |");
+    println!(r"|      / /___/ ____/___/ // /   / /         |");
+    println!(r"|      \____/_/    /____//_/   /_/          |");
+    println!(r"|                                           |");
+    println!(
+        "|                  v{}                   |",
+        env!("CARGO_PKG_VERSION")
+    );
+    println!(r"| Competitive Programming Stress Test Tools |");
+    println!(r"---------------------------------------------");
     Ok(())
 }
 
