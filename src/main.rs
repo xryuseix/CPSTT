@@ -344,7 +344,7 @@ fn exec_cpp_program(
 
     /* スリープの実行 */
     let handle2 = thread::spawn(move || {
-        thread::sleep(Duration::from_millis(200)); // TODO: ここ書き換える
+        thread::sleep(Duration::from_millis(SETTING.execution.time_limit));
     });
     let _ = handle2.join();
 

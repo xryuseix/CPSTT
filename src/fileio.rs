@@ -20,6 +20,7 @@ pub struct SettingsClass {
 pub struct ExecutionSettings {
     pub max_output_len: i32,
     pub max_output_line: i32,
+    pub time_limit: u64,
 }
 
 #[derive(Debug, Deserialize)]

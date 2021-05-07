@@ -3,6 +3,8 @@
 max_output_len = 200
 # ユーザプログラム実行結果の最大表示行数
 max_output_line = 4
+# ユーザプログラムのTime Limit(ms)
+time_limit = 2000
 
 [logging]
 # ユーザプログラム実行結果の表示有無
