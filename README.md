@@ -118,6 +118,8 @@ int main(int argc, char *argv[]) {
 max_output_len = 200
 # ユーザプログラム実行結果の最大表示行数
 max_output_line = 4
+# ユーザプログラムのTime Limit(ms)
+time_limit = 2000
 
 [logging]
 # ユーザプログラム実行結果の表示有無
@@ -143,7 +145,3 @@ stupid.cpp が出力した実行結果を保存する
 ### testcase/
 
 generator.cpp の出力先 (テストケースの保存先)
-
-## 注意
-
-stupid.cpp や smart.cpp が TLE した場合にプログラム実行打ち切りする機能はありません．地球が爆発するようなプログラムは書かないようにしましょう．
