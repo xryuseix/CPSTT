@@ -37,10 +37,10 @@ lazy_static! {
     pub static ref SETTING: SettingsClass = {
         let mut settings_path = MyFileIO::get_root_path().clone();
         settings_path.push("settings.toml");
-        let mut settings = MyFileIO::read_settings(settings_path.clone()).unwrap();
-        if settings.execution.bin_extension != String::from(""){
-            settings.execution.bin_extension = format!(".{}", settings.execution.bin_extension);
-        }
+        let settings = MyFileIO::read_settings(settings_path.clone()).unwrap();
+        // if settings.execution.bin_extension != String::from(""){
+        //     settings.execution.bin_extension = format!(".{}", settings.execution.bin_extension);
+        // }
         settings
     };
 }

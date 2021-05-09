@@ -292,18 +292,21 @@ fn exec_generator(
     exec_args: &Vec<String>,
     root_path: &PathBuf,
 ) -> Result<String> {
+    let mut compile_path = PathBuf::from("generator");
+    compile_path.set_extension(&SETTING.execution.bin_extension);
     compile(
         &cpp_path,
-        String::from(format!("generator{}", &SETTING.execution.bin_extension)),
+        String::from(compile_path.file_name().unwrap().to_string_lossy()),
     )?;
-    let exec_output = Command::new(format!(
-        "{}/cpstt_out/bin/generator{}",
-        root_path.to_str().unwrap(),
-        &SETTING.execution.bin_extension
-    ))
-    .args(exec_args)
-    .output()
-    .expect("Failed to execution C++ program");
+    let mut output_path = PathBuf::from(format!(
+        "{}/cpstt_out/bin/generator",
+        &root_path.to_str().unwrap()
+    ));
+    output_path.set_extension(&SETTING.execution.bin_extension);
+    let exec_output = Command::new(&output_path.to_str().unwrap())
+        .args(exec_args)
+        .output()
+        .expect("Failed to execution C++ program");
 
     let exec_stdout = String::from_utf8_lossy(&exec_output.stdout);
     let exec_stderr = String::from_utf8_lossy(&exec_output.stderr);
@@ -330,12 +333,13 @@ fn exec_cpp_program(
 ) -> Result<(String, Duration, String)> {
     /* 乱数生成 */
     let rand: u32 = rand::thread_rng().gen();
-    let id = String::from(format!(
-        "{}{}",
-        rand.to_string(),
-        &SETTING.execution.bin_extension
-    ));
-    compile(&cpp_path, id.clone())?;
+    let mut bin_path = PathBuf::from(rand.to_string());
+    bin_path.set_extension(&SETTING.execution.bin_extension);
+    let id = String::from(bin_path.file_name().unwrap().to_string_lossy());
+    compile(
+        &cpp_path,
+        String::from(bin_path.file_name().unwrap().to_string_lossy()),
+    )?;
 
     let exec_cat = Command::new("cat")
         .args(&[exec_args[1].clone()])
