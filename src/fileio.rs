@@ -136,4 +136,40 @@ impl MyFileIO {
         let settings: SettingsClass = toml::from_str(&settings_content).unwrap();
         Ok(settings)
     }
+    /**
+     * 空ディレクトリの生成
+     * @param
+     * @return
+     */
+    pub fn make_dir(path: PathBuf) -> Result<()> {
+        match fs::create_dir(path) {
+            Err(_) => {}
+            Ok(_) => {}
+        }
+        Ok(())
+    }
+    /**
+     * 空ディレクトリの生成(cpstt_out,bin,smart,stupid,testcase)
+     * @param 実行ディレクトリへの絶対パス
+     * @return 正常終了の有無
+     */
+    pub fn make_init_dir(root_path: PathBuf) -> Result<()> {
+        let mut cpstt_out_path = root_path.clone();
+        cpstt_out_path.push("cpstt_out");
+        MyFileIO::make_dir(cpstt_out_path.clone())?;
+
+        let mut testcase_path = root_path.clone();
+        testcase_path.push("testcase");
+        MyFileIO::make_dir(testcase_path.clone())?;
+
+        let paths = vec!["bin", "smart", "stupid"];
+
+        for path in paths {
+            let mut base_path = cpstt_out_path.clone();
+            base_path.push(path);
+            MyFileIO::make_dir(base_path.clone())?;
+        }
+
+        Ok(())
+    }
 }

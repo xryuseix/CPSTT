@@ -92,6 +92,9 @@ fn print_logo() -> Result<()> {
  * @return 正常終了の有無
  */
 fn init(test_path: PathBuf) -> Result<()> {
+    /* 空ディレクトリの生成 */
+    MyFileIO::make_init_dir(test_path.clone())?;
+    
     /* 不要なファイルを削除 */
     let mut testcase_path = test_path.clone();
     testcase_path.push("testcase");
