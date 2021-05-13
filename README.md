@@ -31,9 +31,9 @@ cpstt # 実行
 
 ## 必要なディレクトリ構成
 
-[test ディレクトリ](https://github.com/xryuseix/CPSTT/tree/master/test)を参考に，以下のファイル/ディレクトリを作成してください．
+[test ディレクトリ](https://github.com/xryuseix/CPSTT/tree/master/test)を参考に，以下のファイル/ディレクトリを作成してください．なお，`cpstt_out/`内のディレクトリと`testcase/`は自動で生成されます．
 
-```sh
+```txt
 /path/to/YourCodingDirectory
 |--cpstt_out/
 | |--bin/
