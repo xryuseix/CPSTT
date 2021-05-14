@@ -1,6 +1,5 @@
 use anyhow::{bail, Result};
 use clap::Clap;
-use rand::Rng;
 // use toml::to_string;
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
@@ -164,7 +163,7 @@ fn exec_user_program(
     let mut handles = Vec::new();
     let finished_files = Arc::new(Mutex::new(0));
 
-    for (i, testcase) in testcase_paths.iter().enumerate() {
+    for testcase in testcase_paths {
         /* サブスレッドへデータを渡す */
         let (sender_data, receiver_data) = mpsc::channel();
         struct SenderData {
@@ -203,9 +202,9 @@ fn exec_user_program(
             *finished_files += 1;
             let crr_finished_file = *finished_files;
             println!(
-                "{} testcase::{:02} ({:2}/{:2}) is {}. ({}.{:03} sec)",
+                "{} {} ({:2}/{:2}) is {}. ({}.{:03} sec)",
                 PrintColorize::print_cyan(format!("[ {} ]", rcv_data.program_type)),
-                i + 1,
+                rcv_data.testcase.file_stem().unwrap().to_string_lossy(),
                 crr_finished_file,
                 rcv_data.testcase_len,
                 is_tle,
@@ -238,7 +237,8 @@ fn exec_user_program(
             let mut output_path = rcv_data.program_root_path.clone();
             output_path.push(format!("cpstt_out/{}", rcv_data.program_type));
             output_path.push(rcv_data.testcase.file_name().unwrap().to_str().unwrap());
-            output_path.set_extension(&SETTING.execution.bin_extension);
+            // output_path.set_extension(&SETTING.execution.bin_extension);
+            output_path.set_extension("diff");
             MyFileIO::write_file(&output_path, &exec_output).unwrap();
         }));
     }
@@ -458,7 +458,7 @@ fn compare_result(root_path: PathBuf) -> Result<()> {
                 "{} {}: {}",
                 PrintColorize::print_cyan(String::from("[ test ]")),
                 PrintColorize::print_green(String::from("AC")),
-                smart.file_name().unwrap().to_str().unwrap()
+                smart.file_stem().unwrap().to_str().unwrap()
             );
         } else {
             wrong_answer += 1;
@@ -466,7 +466,7 @@ fn compare_result(root_path: PathBuf) -> Result<()> {
                 "{} {}: {}",
                 PrintColorize::print_cyan(String::from("[ test ]")),
                 PrintColorize::print_yellow(String::from("WA")),
-                smart.file_name().unwrap().to_str().unwrap()
+                smart.file_stem().unwrap().to_str().unwrap()
             );
         }
     }

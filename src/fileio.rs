@@ -86,7 +86,7 @@ impl MyFileIO {
         let paths = MyFileIO::get_path_list(dir_path)?;
         for path in paths.iter() {
             let extension = path.extension().unwrap().to_str().unwrap();
-            if extension == "in" || extension == "out" {
+            if extension == "in" || extension == "diff" || extension == SETTING.execution.bin_extension {
                 fs::remove_file(path)?;
             } else {
                 PrintError::print_error(format!(
