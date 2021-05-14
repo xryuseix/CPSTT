@@ -94,7 +94,7 @@ fn print_logo() -> Result<()> {
 fn init(test_path: PathBuf) -> Result<()> {
     /* 空ディレクトリの生成 */
     MyFileIO::make_init_dir(test_path.clone())?;
-    
+
     /* 不要なファイルを削除 */
     let mut testcase_path = test_path.clone();
     testcase_path.push("testcase");
@@ -335,8 +335,7 @@ fn exec_cpp_program(
     root_path: &PathBuf,
 ) -> Result<(String, Duration, String)> {
     /* 乱数生成 */
-    let rand: u32 = rand::thread_rng().gen();
-    let mut bin_path = PathBuf::from(rand.to_string());
+    let mut bin_path = PathBuf::from(PathBuf::from(exec_args[1].clone()).file_name().unwrap());
     bin_path.set_extension(&SETTING.execution.bin_extension);
     let id = String::from(bin_path.file_name().unwrap().to_string_lossy());
     compile(
