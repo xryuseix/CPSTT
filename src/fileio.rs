@@ -35,12 +35,8 @@ lazy_static! {
      * SETTING.execution.max_output_len のようにアクセスする
      */
     pub static ref SETTING: SettingsClass = {
-        let mut settings_path = MyFileIO::get_root_path().clone();
-        settings_path.push("settings.toml");
+        let settings_path = MyFileIO::get_root_path().clone().join("settings.toml");
         let settings = MyFileIO::read_settings(settings_path.clone()).unwrap();
-        // if settings.execution.bin_extension != String::from(""){
-        //     settings.execution.bin_extension = format!(".{}", settings.execution.bin_extension);
-        // }
         settings
     };
 }
@@ -154,19 +150,16 @@ impl MyFileIO {
      * @return 正常終了の有無
      */
     pub fn make_init_dir(root_path: PathBuf) -> Result<()> {
-        let mut cpstt_out_path = root_path.clone();
-        cpstt_out_path.push("cpstt_out");
+        let cpstt_out_path = root_path.clone().join("cpstt_out");
         MyFileIO::make_dir(cpstt_out_path.clone())?;
 
-        let mut testcase_path = root_path.clone();
-        testcase_path.push("testcase");
+        let testcase_path = root_path.clone().join("testcase");
         MyFileIO::make_dir(testcase_path.clone())?;
 
         let paths = vec!["bin", "smart", "stupid"];
 
         for path in paths {
-            let mut base_path = cpstt_out_path.clone();
-            base_path.push(path);
+            let base_path = cpstt_out_path.clone().join(path);
             MyFileIO::make_dir(base_path.clone())?;
         }
 

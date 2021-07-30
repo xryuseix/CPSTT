@@ -39,8 +39,7 @@ fn main() -> Result<()> {
     generator(root_path.clone())?;
 
     /* generatorで生成したファイルパスの取得 */
-    let mut testcase_dir_path = root_path.clone();
-    testcase_dir_path.push("testcase");
+    let testcase_dir_path = root_path.clone().join("testcase");
     let testcase_path_list = MyFileIO::get_path_list(testcase_dir_path.clone())?;
 
     /* smartなプログラムを実行 */
@@ -95,16 +94,13 @@ fn init(test_path: PathBuf) -> Result<()> {
     MyFileIO::make_init_dir(test_path.clone())?;
 
     /* 不要なファイルを削除 */
-    let mut testcase_path = test_path.clone();
-    testcase_path.push("testcase");
+    let testcase_path = test_path.clone().join("testcase");
     MyFileIO::file_clean(testcase_path)?;
 
-    let mut output_smart_path = test_path.clone();
-    output_smart_path.push("cpstt_out/smart");
+    let output_smart_path = test_path.clone().join("cpstt_out/smart");
     MyFileIO::file_clean(output_smart_path)?;
 
-    let mut output_stupid_path = test_path.clone();
-    output_stupid_path.push("cpstt_out/stupid");
+    let output_stupid_path = test_path.clone().join("cpstt_out/stupid");
     MyFileIO::file_clean(output_stupid_path)?;
 
     MyFileIO::file_clean(PathBuf::from(format!(
@@ -121,9 +117,8 @@ fn init(test_path: PathBuf) -> Result<()> {
  */
 fn generator(mut generator_path: PathBuf) -> Result<()> {
     /* パスの作成 */
+    let generator_root_path = generator_path.clone();
     generator_path.push("generator.cpp");
-    let mut generator_root_path = generator_path.clone();
-    generator_root_path.pop();
 
     /* generatorを実行 */
     let args = vec![String::from(generator_root_path.to_str().unwrap())];
@@ -155,9 +150,8 @@ fn exec_user_program(
     testcase_paths: &Vec<PathBuf>,
     program_type: String,
 ) -> Result<()> {
+    let program_root_path = program_path.clone();
     program_path.push(format!("{}.cpp", &program_type));
-    let mut program_root_path = program_path.clone();
-    program_root_path.pop();
 
     /* C++プログラムを全て並列実行 */
     let mut handles = Vec::new();
@@ -234,10 +228,7 @@ fn exec_user_program(
                 }
             }
             /* 実行結果をファイル書き込み */
-            let mut output_path = rcv_data.program_root_path.clone();
-            output_path.push(format!("cpstt_out/{}", rcv_data.program_type));
-            output_path.push(rcv_data.testcase.file_name().unwrap().to_str().unwrap());
-            // output_path.set_extension(&SETTING.execution.bin_extension);
+            let mut output_path = rcv_data.program_root_path.clone().join(format!("cpstt_out/{}", rcv_data.program_type)).join(rcv_data.testcase.file_name().unwrap().to_str().unwrap());
             output_path.set_extension("diff");
             MyFileIO::write_file(&output_path, &exec_output).unwrap();
         }));
@@ -435,10 +426,8 @@ fn exec_cpp_program(
  */
 fn compare_result(root_path: PathBuf) -> Result<()> {
     /* フォルダパスの生成 */
-    let mut smart_test_path = root_path.clone();
-    smart_test_path.push("cpstt_out/smart");
-    let mut stupid_test_path = root_path.clone();
-    stupid_test_path.push("cpstt_out/stupid");
+    let smart_test_path = root_path.clone().join("cpstt_out/smart");
+    let stupid_test_path = root_path.clone().join("cpstt_out/stupid");
     /* テストケースのパスの取得 */
     let smart_test = MyFileIO::get_path_list(smart_test_path).unwrap();
     let stupid_test = MyFileIO::get_path_list(stupid_test_path).unwrap();
@@ -502,8 +491,7 @@ mod tests {
      */
     fn exec_generator_test() {
         /* 正常ファイル */
-        let mut generator_path = MyFileIO::get_root_path();
-        generator_path.push("generator.cpp");
+        let generator_path = MyFileIO::get_root_path().join("generator.cpp");
         let mut generator_root_path = generator_path.clone();
         generator_root_path.pop();
         let args = vec![String::from(generator_root_path.to_str().unwrap())];
